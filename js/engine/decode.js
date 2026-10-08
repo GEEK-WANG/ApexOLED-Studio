@@ -10,15 +10,15 @@ export const VIDEO_EXTS = ['mp4', 'webm', 'mov', 'mkv', 'avi', 'm4v'];
 
 export function parseCrop(s) {
   const mm = (s || '').trim().match(/^(\d+)[xX](\d+)[+](\d+)[+](\d+)$/);
-  if (!mm) throw new EngineError('--crop 格式应为 WxH+X+Y，例如 430x140+70+60（宽x高+左+上）。');
+  if (!mm) throw new EngineError('--crop 格式应为 WxH+X+Y，例如 430x140+70+60（宽x高+左+上）。 / --crop format: WxH+X+Y, e.g. 430x140+70+60');
   return { w: +mm[1], h: +mm[2], x: +mm[3], y: +mm[4] };
 }
 
 export function checkCropBounds(crop, srcW, srcH) {
-  if (crop.w <= 0 || crop.h <= 0) throw new EngineError('裁剪区域宽高必须大于 0。');
+  if (crop.w <= 0 || crop.h <= 0) throw new EngineError('裁剪区域宽高必须大于 0。 / Crop width and height must be > 0.');
   if (crop.x + crop.w > srcW || crop.y + crop.h > srcH) {
     throw new EngineError(
-      `裁剪区域超出图片范围：图片为 ${srcW}x${srcH}，而框选区域为 x:${crop.x} y:${crop.y} w:${crop.w} h:${crop.h}，请重新框选。`);
+      `裁剪区域超出图片范围：图片为 ${srcW}x${srcH}，而框选区域为 x:${crop.x} y:${crop.y} w:${crop.w} h:${crop.h}，请重新框选。 / Crop out of bounds: image is ${srcW}x${srcH}, selection x:${crop.x} y:${crop.y} w:${crop.w} h:${crop.h}.`);
   }
 }
 
@@ -111,12 +111,12 @@ async function decodeVideo(file, fps, duration, maxFrames, crop) {
   try {
     await new Promise((resolve, reject) => {
       video.onloadedmetadata = resolve;
-      video.onerror = () => reject(new EngineError(`无法解码视频文件 ${file.name}（浏览器不支持的编码格式）。`));
-      setTimeout(() => reject(new EngineError('视频加载超时，请重试或换用 mp4/webm 格式。')), 20000);
+      video.onerror = () => reject(new EngineError(`无法解码视频文件 ${file.name}（浏览器不支持的编码格式）。 / Cannot decode video ${file.name} (unsupported codec in this browser).`));
+      setTimeout(() => reject(new EngineError('视频加载超时，请重试或换用 mp4/webm 格式。 / Video loading timed out; retry or use mp4/webm.')), 20000);
     });
 
     const end = duration ? Math.min(video.duration || duration, duration) : video.duration;
-    if (!end || !isFinite(end)) throw new EngineError('无法读取视频时长信息。');
+    if (!end || !isFinite(end)) throw new EngineError('无法读取视频时长信息。 / Cannot read video duration.');
     let ticks = Math.max(1, roundHalfEven(end * fps));
     if (maxFrames) ticks = Math.min(ticks, Math.max(1, Math.round(maxFrames)));
 
@@ -138,7 +138,7 @@ async function decodeVideo(file, fps, duration, maxFrames, crop) {
       await seek(k / fps);
       frames.push(forceOpaque(canvasFrame(video, drawW, drawH, sx, sy, drawW, drawH)));
     }
-    if (!frames.length) throw new EngineError(`未能从视频 ${file.name} 中解码出任何帧。`);
+    if (!frames.length) throw new EngineError(`未能从视频 ${file.name} 中解码出任何帧。 / No frames decoded from ${file.name}.`);
     return frames;
   } finally {
     URL.revokeObjectURL(url);
@@ -178,7 +178,7 @@ export async function decodeFile(file, opts = {}) {
       frames = frames.map(forceOpaque);
       return { frames, animated: frames.length > 1, source: 'anim', warnings };
     }
-    warnings.push('当前浏览器不支持 GIF 逐帧解码，已按静态图片处理（Chrome/Edge/Firefox 支持完整动图）。');
+    warnings.push('当前浏览器不支持 GIF 逐帧解码，已按静态图片处理（Chrome/Edge/Firefox 支持完整动图）。 / This browser cannot decode animated GIF frames; using the first frame only (Chrome/Edge/Firefox support full animation).');
   }
 
   // 静态图片（含 GIF 降级 / APNG 首帧）
@@ -189,7 +189,7 @@ export async function decodeFile(file, opts = {}) {
     try {
       bitmap = await createImageBitmap(file);
     } catch {
-      throw new EngineError(`无法读取图片文件 ${file.name}：文件损坏或格式不受支持。`);
+      throw new EngineError(`无法读取图片文件 ${file.name}：文件损坏或格式不受支持。 / Cannot read image ${file.name}: corrupted or unsupported format.`);
     }
   }
   let frame = canvasFrame(bitmap, bitmap.width, bitmap.height);

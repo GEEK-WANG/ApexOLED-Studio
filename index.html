@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ApexOLED Studio — 赛睿 OLED 动图工坊</title>
-<meta name="description" content="把任意图片 / GIF / 视频一键转换为赛睿 Apex Pro TKL 键盘 OLED 屏（128×40）可用的动图与图片。纯浏览器本地处理，无需安装任何软件。">
+<title>ApexOLED Studio — SteelSeries OLED Animation Maker</title>
+<meta name="description" content="Turn any image / GIF / video into content for the SteelSeries Apex Pro TKL keyboard OLED screen (128×40). Runs entirely in your browser — no install, nothing uploaded. 中英文双语。">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,10 @@
 <header>
   <div class="logo-mark"></div>
   <b>ApexOLED Studio</b>
-  <span class="tag">128×40 · 10FPS · 纯本地处理</span>
+  <span class="tag">
+    <span data-zh="128×40 · 10FPS · 纯本地处理" data-en="128×40 · 10FPS · 100% local">128×40 · 10FPS · 纯本地处理</span>
+  </span>
+  <button id="btn-lang" class="lang-btn" title="切换语言 / Switch language">EN</button>
   <span class="ver" id="ver"></span>
 </header>
 
@@ -21,44 +24,45 @@
   <aside id="panel">
 
     <section>
-      <h3>① 素材</h3>
+      <h3 data-zh="① 素材" data-en="① Source">① 素材</h3>
       <div id="dropzone">
-        <b>拖拽图片 / GIF / 视频到这里</b><br>或点击选择文件
+        <b data-zh="拖拽图片 / GIF / 视频到这里" data-en="Drop an image / GIF / video here">拖拽图片 / GIF / 视频到这里</b><br>
+        <span data-zh="或点击选择文件" data-en="or click to browse">或点击选择文件</span>
       </div>
       <input type="file" id="file-input" accept="image/*,video/*" hidden>
       <div id="src-info" hidden></div>
     </section>
 
     <section>
-      <h3>② 效果与色彩</h3>
+      <h3 data-zh="② 效果与色彩" data-en="② Effects &amp; Color">② 效果与色彩</h3>
       <div class="field">
-        <label>动画效果（静态图片生效）</label>
+        <label data-zh="动画效果（静态图片生效）" data-en="Animation effects (static images only)">动画效果（静态图片生效）</label>
         <div id="effect-chips" class="chips"></div>
       </div>
       <div class="field">
-        <label>色彩模式</label>
+        <label data-zh="色彩模式" data-en="Color mode">色彩模式</label>
         <div class="seg" id="seg-colors">
-          <button data-v="bw" class="on" title="黑白像素风，OLED 上最清晰（推荐）">黑白</button>
-          <button data-v="gray">灰度</button>
-          <button data-v="color">彩色</button>
+          <button data-v="bw" class="on" data-zh="黑白" data-en="B&amp;W" data-zh-title="黑白像素风，OLED 上最清晰（推荐）" data-en-title="1-bit pixels — sharpest on OLED (recommended)">黑白</button>
+          <button data-v="gray" data-zh="灰度" data-en="Gray">灰度</button>
+          <button data-v="color" data-zh="彩色" data-en="Color">彩色</button>
         </div>
       </div>
     </section>
 
     <section>
-      <h3>③ 导出</h3>
+      <h3 data-zh="③ 导出" data-en="③ Export">③ 导出</h3>
       <div class="field row2">
         <div>
-          <label>格式</label>
+          <label data-zh="格式" data-en="Format">格式</label>
           <select id="sel-format">
-            <option value="png">PNG（静态）</option>
-            <option value="jpg">JPG（静态）</option>
-            <option value="bmp">BMP（静态）</option>
-            <option value="gif">GIF（动态）</option>
+            <option value="png" data-zh="PNG（静态）" data-en="PNG (static)">PNG（静态）</option>
+            <option value="jpg" data-zh="JPG（静态）" data-en="JPG (static)">JPG（静态）</option>
+            <option value="bmp" data-zh="BMP（静态）" data-en="BMP (static)">BMP（静态）</option>
+            <option value="gif" data-zh="GIF（动态）" data-en="GIF (animated)">GIF（动态）</option>
           </select>
         </div>
         <div id="quality-field">
-          <label>JPG 质量</label>
+          <label data-zh="JPG 质量" data-en="JPG quality">JPG 质量</label>
           <div class="rangeval">
             <input type="range" id="rg-quality" min="40" max="100" step="1" value="92">
             <output id="out-quality">92</output>
@@ -66,21 +70,21 @@
         </div>
       </div>
       <div class="field" id="upload-hint-mini"></div>
-      <button class="primary" id="btn-export" disabled>导出成品</button>
+      <button class="primary" id="btn-export" disabled data-zh="导出成品" data-en="Export">导出成品</button>
     </section>
 
     <details id="advanced">
-      <summary>高级参数</summary>
+      <summary data-zh="高级参数" data-en="Advanced">高级参数</summary>
 
       <div class="field">
-        <label>入场效果 / 方向</label>
+        <label data-zh="入场效果 / 方向" data-en="In effect / direction">入场效果 / 方向</label>
         <div class="row2">
           <select id="sel-eff-in"></select>
           <select id="sel-eff-in-dir"></select>
         </div>
       </div>
       <div class="field">
-        <label>退场效果 / 方向</label>
+        <label data-zh="退场效果 / 方向" data-en="Out effect / direction">退场效果 / 方向</label>
         <div class="row2">
           <select id="sel-eff-out"></select>
           <select id="sel-eff-out-dir"></select>
@@ -89,47 +93,47 @@
 
       <div class="field row2">
         <div>
-          <label>适配模式</label>
+          <label data-zh="适配模式" data-en="Fit mode">适配模式</label>
           <div class="seg" id="seg-mode">
-            <button data-v="cover" class="on" title="裁剪填满 128×40">cover 填满</button>
-            <button data-v="fit" title="完整显示，空白补背景">fit 完整</button>
+            <button data-v="cover" class="on" data-zh="cover 填满" data-en="cover fill" data-zh-title="裁剪填满 128×40" data-en-title="Crop to fill 128×40">cover 填满</button>
+            <button data-v="fit" data-zh="fit 完整" data-en="fit whole" data-zh-title="完整显示，空白补背景" data-en-title="Fit whole image on background">fit 完整</button>
           </div>
         </div>
         <div>
-          <label>fit 背景色</label>
+          <label data-zh="fit 背景色" data-en="fit background">fit 背景色</label>
           <select id="sel-bg">
-            <option value="black">黑色</option>
-            <option value="white">白色</option>
+            <option value="black" data-zh="黑色" data-en="Black">黑色</option>
+            <option value="white" data-zh="白色" data-en="White">白色</option>
           </select>
         </div>
       </div>
 
       <div class="field row2">
         <div>
-          <label>锐化增强</label>
+          <label data-zh="锐化增强" data-en="Sharpen">锐化增强</label>
           <select id="sel-enhance">
-            <option value="none">关闭</option>
-            <option value="light">轻度锐化</option>
-            <option value="strong">强力锐化</option>
+            <option value="none" data-zh="关闭" data-en="Off">关闭</option>
+            <option value="light" data-zh="轻度锐化" data-en="Light sharpen">轻度锐化</option>
+            <option value="strong" data-zh="强力锐化" data-en="Strong sharpen">强力锐化</option>
           </select>
         </div>
         <div>
-          <label>抖动</label>
+          <label data-zh="抖动" data-en="Dither">抖动</label>
           <select id="sel-dither">
-            <option value="auto">自动（平滑递色）</option>
-            <option value="none">无抖动（最锐利）</option>
-            <option value="bayer">棋盘纹理</option>
+            <option value="auto" data-zh="自动（平滑递色）" data-en="Auto (smooth)">自动（平滑递色）</option>
+            <option value="none" data-zh="无抖动（最锐利）" data-en="None (sharpest)">无抖动（最锐利）</option>
+            <option value="bayer" data-zh="棋盘纹理" data-en="Bayer pattern">棋盘纹理</option>
           </select>
         </div>
       </div>
 
       <div class="field checkline">
         <input type="checkbox" id="chk-logo">
-        <span>白底 Logo 优化（白底压黑、彩字提亮）</span>
+        <span data-zh="白底 Logo 优化（白底压黑、彩字提亮）" data-en="White-bg logo fix (invert white bg, keep color text)">白底 Logo 优化（白底压黑、彩字提亮）</span>
       </div>
 
       <div class="field">
-        <label>调色板颜色数（灰度/彩色生效）</label>
+        <label data-zh="调色板颜色数（灰度/彩色生效）" data-en="Palette size (gray/color)">调色板颜色数（灰度/彩色生效）</label>
         <div class="rangeval">
           <input type="range" id="rg-palette" min="2" max="256" step="2" value="256">
           <output id="out-palette">256</output>
@@ -137,17 +141,19 @@
       </div>
 
       <div class="field">
-        <label>帧率 FPS：<output id="out-fps">10</output></label>
+        <label>
+          <span data-zh="帧率 FPS：" data-en="Frame rate: ">帧率 FPS：</span><output id="out-fps">10</output>
+        </label>
         <input type="range" id="rg-fps" min="1" max="30" step="1" value="10">
       </div>
 
       <div class="field">
-        <label>效果时间轴（进场 / 停留 / 退场 / 黑屏）</label>
+        <label data-zh="效果时间轴（进场 / 停留 / 退场 / 黑屏）" data-en="Effect timeline (in / hold / out / gap)">效果时间轴（进场 / 停留 / 退场 / 黑屏）</label>
         <div class="metric-row">
-          <div class="metric"><div class="k">进场 s</div><div class="v" id="m-in">0.8</div></div>
-          <div class="metric"><div class="k">停留 s</div><div class="v" id="m-hold">1.6</div></div>
-          <div class="metric"><div class="k">退场 s</div><div class="v" id="m-out">0.8</div></div>
-          <div class="metric"><div class="k">间隔 s</div><div class="v" id="m-gap">0.4</div></div>
+          <div class="metric"><div class="k" data-zh="进场 s" data-en="In s">进场 s</div><div class="v" id="m-in">0.8</div></div>
+          <div class="metric"><div class="k" data-zh="停留 s" data-en="Hold s">停留 s</div><div class="v" id="m-hold">1.6</div></div>
+          <div class="metric"><div class="k" data-zh="退场 s" data-en="Out s">退场 s</div><div class="v" id="m-out">0.8</div></div>
+          <div class="metric"><div class="k" data-zh="间隔 s" data-en="Gap s">间隔 s</div><div class="v" id="m-gap">0.4</div></div>
         </div>
         <input type="range" id="rg-tin"  min="0" max="5" step="0.1" value="0.8">
         <input type="range" id="rg-thold" min="0" max="5" step="0.1" value="1.6">
@@ -157,12 +163,12 @@
 
       <div class="field row2" id="video-opts" hidden>
         <div>
-          <label>视频截取时长（秒，留空 = 全部）</label>
-          <input type="number" id="in-duration" min="0.1" step="0.5" placeholder="全部">
+          <label data-zh="视频截取时长（秒，留空 = 全部）" data-en="Clip duration (s, blank = all)">视频截取时长（秒，留空 = 全部）</label>
+          <input type="number" id="in-duration" min="0.1" step="0.5" placeholder="全部" data-zh-ph="全部" data-en-ph="all">
         </div>
         <div>
-          <label>最多帧数（留空 = 不限制）</label>
-          <input type="number" id="in-maxframes" min="1" step="1" placeholder="不限制">
+          <label data-zh="最多帧数（留空 = 不限制）" data-en="Max frames (blank = unlimited)">最多帧数（留空 = 不限制）</label>
+          <input type="number" id="in-maxframes" min="1" step="1" placeholder="不限制" data-zh-ph="不限制" data-en-ph="unlimited">
         </div>
       </div>
     </details>
@@ -172,46 +178,46 @@
   <div id="stage">
 
     <div class="stage-card" id="crop-wrap" hidden>
-      <h3>源图框选（拖出矩形选择要上屏的区域，可选）</h3>
+      <h3 data-zh="源图框选（拖出矩形选择要上屏的区域，可选）" data-en="Crop (drag a rectangle to select the on-screen area, optional)">源图框选（拖出矩形选择要上屏的区域，可选）</h3>
       <canvas id="crop-canvas"></canvas>
       <div class="crop-bar">
         <span id="crop-val">未框选（使用完整画面）</span>
-        <button class="ghost" id="btn-crop-clear">清除框选</button>
+        <button class="ghost" id="btn-crop-clear" data-zh="清除框选" data-en="Clear selection">清除框选</button>
       </div>
     </div>
 
     <div class="stage-card">
-      <h3>OLED 实时预览（128 × 40 · 预览即成品）</h3>
+      <h3 data-zh="OLED 实时预览（128 × 40 · 预览即成品）" data-en="Live OLED preview (128×40 · WYSIWYG)">OLED 实时预览（128 × 40 · 预览即成品）</h3>
       <div id="oled-row">
         <div class="oled-box">
-          <div class="cap">1:1 真实尺寸</div>
+          <div class="cap" data-zh="1:1 真实尺寸" data-en="1:1 actual size">1:1 真实尺寸</div>
           <canvas id="oled-1x" width="128" height="40"></canvas>
         </div>
         <div class="oled-box">
-          <div class="cap">4x 放大</div>
+          <div class="cap" data-zh="4x 放大" data-en="4x zoom">4x 放大</div>
           <canvas id="oled-4x" width="512" height="160"></canvas>
         </div>
       </div>
       <div id="player-bar">
-        <button class="ghost" id="btn-prev" title="上一帧">|◀</button>
+        <button class="ghost" id="btn-prev" data-zh-title="上一帧" data-en-title="Previous frame" title="上一帧">|◀</button>
         <button class="primary" id="btn-play" style="height:30px;width:74px" disabled>▶ 播放</button>
-        <button class="ghost" id="btn-next" title="下一帧">▶|</button>
+        <button class="ghost" id="btn-next" data-zh-title="下一帧" data-en-title="Next frame" title="下一帧">▶|</button>
         <span id="frame-pos">-- / --</span>
-        <span id="render-stats">等待素材…</span>
+        <span id="render-stats" data-zh="等待素材…" data-en="Waiting for a file…">等待素材…</span>
       </div>
     </div>
 
     <div class="stage-card" id="warn-card" hidden>
-      <h3>提示</h3>
+      <h3 data-zh="提示" data-en="Notes">提示</h3>
       <div id="warn-area"></div>
     </div>
 
     <div class="stage-card" id="guide-card">
-      <h3>怎么传到键盘上？</h3>
+      <h3 data-zh="怎么传到键盘上？" data-en="How to upload to your keyboard">怎么传到键盘上？</h3>
       <ol class="guide">
-        <li>点击「导出成品」下载文件（动图为 GIF，静图为 PNG）</li>
-        <li>打开 <b>SteelSeries GG</b> → 键盘 → <b>OLED &amp; Settings</b> → <b>Edit OLED Image</b></li>
-        <li>选择 <b>Upload From File</b>，选中刚下载的文件即可</li>
+        <li data-zh="点击「导出成品」下载文件（动图为 GIF，静图为 PNG）" data-en="Click Export to download the file (GIF for animations, PNG for stills)">点击「导出成品」下载文件（动图为 GIF，静图为 PNG）</li>
+        <li data-zh="打开 SteelSeries GG → 键盘 → OLED &amp; Settings → Edit OLED Image" data-en="Open SteelSeries GG → keyboard → OLED &amp; Settings → Edit OLED Image">打开 SteelSeries GG → 键盘 → OLED &amp; Settings → Edit OLED Image</li>
+        <li data-zh="选择 Upload From File，选中刚下载的文件即可" data-en="Choose Upload From File and pick the downloaded file">选择 Upload From File，选中刚下载的文件即可</li>
       </ol>
     </div>
 
@@ -219,8 +225,9 @@
 </main>
 
 <footer>
-  ApexOLED Studio · 纯浏览器本地处理，图片不会上传到任何服务器 ·
-  <a href="https://github.com/SteelSeries/gamesense-sdk" target="_blank" rel="noopener">参考：SteelSeries 开发者生态</a>
+  ApexOLED Studio ·
+  <span data-zh="纯浏览器本地处理，图片不会上传到任何服务器" data-en="Runs entirely in your browser — nothing is uploaded to any server">纯浏览器本地处理，图片不会上传到任何服务器</span> ·
+  <a href="https://github.com/SteelSeries/gamesense-sdk" target="_blank" rel="noopener" data-zh="参考：SteelSeries 开发者生态" data-en="Reference: SteelSeries developer ecosystem">参考：SteelSeries 开发者生态</a>
 </footer>
 
 <div id="toast"></div>

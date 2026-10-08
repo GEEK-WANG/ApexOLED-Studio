@@ -4,6 +4,7 @@ import { decodeFile } from './js/engine/decode.js';
 import { render, makeRenderOptions, validateOptions } from './js/engine/pipeline.js';
 import { effectMeta, parseEffectSpec } from './js/engine/effects.js';
 import { defaultFormat, exportResult, downloadBlob, formatBytes, FORMATS } from './js/engine/export.js';
+import { t, getLang, onLangChange, initLang } from './js/i18n.js';
 
 const $ = id => document.getElementById(id);
 
@@ -44,26 +45,24 @@ function setStats(html) { $('render-stats').innerHTML = html; }
 /* ---------------- 效果 UI ---------------- */
 
 const CHIPS = [
-  { label: '无效果', value: null },
-  { label: '呼吸', value: 'breathing' },
-  { label: '淡入淡出', value: 'fade' },
-  { label: '擦除 左→右', value: 'wipe:l2r' },
-  { label: '擦除 上→下', value: 'wipe:t2b' },
-  { label: '揭开 上→下', value: 'reveal:t2b' },
-  { label: '缩放渐显', value: 'zoom' },
-  { label: '百叶窗', value: 'blinds' },
-  { label: '扫描线', value: 'scanline' },
-  { label: '像素化浮现', value: 'pixelate' },
+  { key: 'effNone', value: null },
+  { key: 'effBreathing', value: 'breathing' },
+  { key: 'effFade', value: 'fade' },
+  { key: 'effWipeL2r', value: 'wipe:l2r' },
+  { key: 'effWipeT2b', value: 'wipe:t2b' },
+  { key: 'effRevealT2b', value: 'reveal:t2b' },
+  { key: 'effZoom', value: 'zoom' },
+  { key: 'effBlinds', value: 'blinds' },
+  { key: 'effScanline', value: 'scanline' },
+  { key: 'effPixelate', value: 'pixelate' },
 ];
-
-const EFFECT_NAMES = { fade: '淡入淡出', wipe: '擦除', reveal: '揭开', zoom: '缩放渐显', blinds: '百叶窗', scanline: '扫描线', pixelate: '像素化浮现', breathing: '呼吸' };
-const DIR_NAMES = { l2r: '左→右', r2l: '右→左', t2b: '上→下', b2t: '下→上', tl2br: '左上→右下', tr2bl: '右上→左下', bl2tr: '左下→右上', br2tl: '右下→左上', h: '横向', v: '纵向' };
 
 function buildEffectUI() {
   const chips = $('effect-chips');
+  chips.innerHTML = ''; // 切换语言时重建，先清空
   for (const c of CHIPS) {
     const b = document.createElement('button');
-    b.textContent = c.label;
+    b.textContent = t(c.key);
     b.dataset.value = c.value ?? '';
     b.onclick = () => {
       state.opts.effect = c.value;
@@ -77,7 +76,7 @@ function buildEffectUI() {
   const names = ['none', ...Object.keys(meta).sort()];
   for (const sel of [$('sel-eff-in'), $('sel-eff-out')]) {
     sel.innerHTML = names.map(n =>
-      `<option value="${n}">${n === 'none' ? '无' : EFFECT_NAMES[n] ?? n}</option>`).join('');
+      `<option value="${n}">${t(n)}</option>`).join('');
     sel.onchange = () => { syncEffectFromDropdowns(); scheduleRender(); };
   }
   for (const sel of [$('sel-eff-in-dir'), $('sel-eff-out-dir')]) {
@@ -86,7 +85,7 @@ function buildEffectUI() {
 }
 
 function dirOptions(directions) {
-  return directions.map(d => `<option value="${d}">${DIR_NAMES[d] ?? d}</option>`).join('');
+  return directions.map(d => `<option value="${d}">${t(d)}</option>`).join('');
 }
 
 function syncEffectDropdowns() {
@@ -163,7 +162,7 @@ async function decodeAndRender() {
   const file = state.file;
   if (!file) return;
 
-  setStats('解码中…');
+  setStats(t('decoding'));
   try {
     const seq = await decodeFile(file, {
       fps: state.opts.fps,
@@ -199,9 +198,8 @@ function renderOnly() {
     drawFrame(0);
     if (result.frames.length > 1) startPlay(); else stopPlay();
     const dt = Math.round(performance.now() - t0);
-    const frames = result.frames.length;
-    const dim = `${WIDTH}×${HEIGHT}`;
-    setStats(`${dim} · <b>${frames}</b> 帧 · ${state.opts.fps} FPS · 渲染 <b>${dt}</b> ms`);
+    state.lastStats = { frames: result.frames.length, fps: state.opts.fps, dt };
+    setStats(statsHtml(state.lastStats));
     showWarnings(result.warnings);
     updateExportUI();
   } catch (err) {
@@ -214,6 +212,13 @@ function renderOnly() {
 function readNum(id) {
   const v = $(id).value;
   return v === '' || v == null ? null : Number(v);
+}
+
+function statsHtml(s) {
+  const dim = `${WIDTH}×${HEIGHT}`;
+  return getLang() === 'zh'
+    ? `${dim} · <b>${s.frames}</b> 帧 · ${s.fps} FPS · 渲染 <b>${s.dt}</b> ms`
+    : `${dim} · <b>${s.frames}</b> frames · ${s.fps} FPS · rendered in <b>${s.dt}</b> ms`;
 }
 
 /* ---------------- 预览播放器 ---------------- */
@@ -238,7 +243,7 @@ function stopPlay() {
   state.playing = false;
   clearInterval(state.playTimer);
   state.playTimer = null;
-  $('btn-play').textContent = '▶ 播放';
+  $('btn-play').textContent = t('play');
 }
 
 function startPlay() {
@@ -246,7 +251,7 @@ function startPlay() {
   if (!r || r.frames.length < 2) return;
   stopPlay(); // 先清旧计时器：素材/参数切换会重建播放，防止多计时器叠跑取模错帧
   state.playing = true;
-  $('btn-play').textContent = '❚❚ 暂停';
+  $('btn-play').textContent = t('pause');
   state.playTimer = setInterval(() => {
     drawFrame((state.frameIdx + 1) % r.frames.length);
   }, 1000 / r.fps);
@@ -258,12 +263,20 @@ $('btn-next').onclick = () => { if (state.result) drawFrame((state.frameIdx + 1)
 
 /* ---------------- 文件载入 ---------------- */
 
+function updateCropVal() {
+  const c = state.crop;
+  if (!c) { $('crop-val').textContent = t('cropNone'); return; }
+  const ratio = (c.w / c.h).toFixed(2);
+  const hint = Math.abs(c.w / c.h - 3.2) < 0.15 ? t('cropRatioOk') : '';
+  $('crop-val').innerHTML = `x:${c.x} y:${c.y} w:${c.w} h:${c.h} <code>${ratio}:1</code> ${hint}`;
+}
+
 async function loadFile(file) {
   if (!file) return;
   stopPlay(); // 切素材即停播，防止解码期间旧计时器空转
   state.file = file;
   state.crop = null;
-  $('crop-val').textContent = '未框选（使用完整画面）';
+  updateCropVal();
   state.seq = null;
   state.result = null;
   state.renderToken++;
@@ -372,7 +385,7 @@ function bindCrop() {
       // 视作单击：清除框选
       drawCropOverlay(null);
       state.crop = null;
-      $('crop-val').textContent = '未框选（使用完整画面）';
+      updateCropVal();
       requestRender(true);
       return;
     }
@@ -382,9 +395,7 @@ function bindCrop() {
     const w = Math.max(1, fx(Math.max(sx, p.x)) - x);
     const h = Math.max(1, fx(Math.max(sy, p.y)) - y);
     state.crop = { x, y, w, h };
-    const ratio = (w / h).toFixed(2);
-    const hint = Math.abs(w / h - 3.2) < 0.15 ? '（≈3.2:1，与 OLED 同比例，无需再裁）' : '';
-    $('crop-val').innerHTML = `x:${x} y:${y} w:${w} h:${h} <code>${ratio}:1</code> ${hint}`;
+    updateCropVal();
     requestRender(true);
   };
   c.addEventListener('pointerdown', down);
@@ -393,7 +404,7 @@ function bindCrop() {
   $('btn-crop-clear').onclick = () => {
     state.crop = null;
     drawCropOverlay(null);
-    $('crop-val').textContent = '未框选（使用完整画面）';
+    updateCropVal();
     requestRender(true);
   };
 }
@@ -474,15 +485,20 @@ function updateExportUI() {
   const gifOpt = sel.querySelector('option[value="gif"]');
   if (!r.animated) {
     gifOpt.disabled = true;
-    gifOpt.textContent = 'GIF（需动态内容）';
+    gifOpt.textContent = t('fmtGifStatic');
     if (sel.value === 'gif') sel.value = 'png';
   } else {
     gifOpt.disabled = false;
-    gifOpt.textContent = 'GIF（动态）';
+    gifOpt.textContent = t('fmtGifAnim');
   }
+  const zh = getLang() === 'zh';
   $('upload-hint-mini').innerHTML = r.animated
-    ? `动图 · <b>${r.frames.length}</b> 帧 @ ${r.fps}FPS，导出 GIF 后到赛睿驱动上传`
-    : `静图 · 导出 PNG/JPG/BMP 后到赛睿驱动上传`;
+    ? (zh
+      ? `动图 · <b>${r.frames.length}</b> 帧 @ ${r.fps}FPS，导出 GIF 后到赛睿驱动上传`
+      : `Animated · <b>${r.frames.length}</b> frames @ ${r.fps}FPS — export GIF, then upload in SteelSeries GG`)
+    : (zh
+      ? `静图 · 导出 PNG/JPG/BMP 后到赛睿驱动上传`
+      : `Static · export PNG/JPG/BMP, then upload in SteelSeries GG`);
 }
 
 $('btn-export').onclick = async () => {
@@ -494,7 +510,9 @@ $('btn-export').onclick = async () => {
   try {
     const { blob, filename, notes, size } = await exportResult(r, fmt, quality, base);
     downloadBlob(blob, filename);
-    toast(`已导出 ${filename}（${formatBytes(size)}）`, 'ok');
+    toast(getLang() === 'zh'
+      ? `已导出 ${filename}（${formatBytes(size)}）`
+      : `Exported ${filename} (${formatBytes(size)})`, 'ok');
     if (notes.length) showWarnings([...r.warnings, ...notes]);
   } catch (err) {
     toast(err.message || String(err), 'err');
@@ -503,14 +521,24 @@ $('btn-export').onclick = async () => {
 
 /* ---------------- 启动 ---------------- */
 
+// 切换语言后重渲染所有动态文案（静态文案由 i18n.applyStatic 扫描处理）
+function applyLangUI() {
+  buildEffectUI();        // 重建 chips + 效果下拉
+  syncEffectDropdowns();   // 同步下拉当前值
+  updateCropVal();
+  updateExportUI();
+  $('btn-play').textContent = state.playing ? t('pause') : t('play');
+  if (state.lastStats) setStats(statsHtml(state.lastStats));
+}
+
 function init() {
   $('ver').textContent = `v${VERSION}`;
-  buildEffectUI();
+  initLang();             // 语言初始化 + 绑定切换按钮
   bindDropzone();
   bindCrop();
   bindParams();
-  syncEffectDropdowns();
-  updateExportUI();
+  onLangChange(applyLangUI);
+  applyLangUI();          // 首次渲染（chips/下拉/播放按钮文案按当前语言）
 }
 
 init();

@@ -120,7 +120,7 @@ function frameIndices(frame, palette) {
 
 export function encodeGIF(frames, fps, palette = null) {
   if (frames.length < 2) {
-    throw new EngineError('纯静态内容不支持导出 GIF：请选择 PNG/JPG/BMP，或为静态图添加动画效果。');
+    throw new EngineError('纯静态内容不支持导出 GIF：请选择 PNG/JPG/BMP，或为静态图添加动画效果。 / Static content cannot be exported as GIF: pick PNG/JPG/BMP, or add an animation effect.');
   }
   const colors = palette && palette.length
     ? palette.map(c => Array.from(c))
@@ -206,19 +206,19 @@ export async function exportResult(result, fmt, quality = 92, baseName = 'apexol
   if (!fmt) fmt = defaultFormat(result);
   fmt = fmt.toLowerCase();
   if (!FORMATS.includes(fmt)) {
-    throw new EngineError(`不支持的导出格式：${fmt}（可选 ${FORMATS.join('/')}）`);
+    throw new EngineError(`不支持的导出格式：${fmt}（可选 ${FORMATS.join('/')}） / Unsupported export format: ${fmt} (allowed ${FORMATS.join('/')})`);
   }
   const notes = [];
   let blob, ext = fmt === 'jpeg' ? 'jpg' : fmt;
 
   if (fmt === 'gif') {
     if (!result.animated) {
-      throw new EngineError('纯静态内容不支持导出 GIF：请选择 PNG/JPG/BMP，或为静态图添加动画效果。');
+      throw new EngineError('纯静态内容不支持导出 GIF：请选择 PNG/JPG/BMP，或为静态图添加动画效果。 / Static content cannot be exported as GIF: pick PNG/JPG/BMP, or add an animation effect.');
     }
     const bytes = encodeGIF(result.frames, result.fps, result.palette);
     blob = new Blob([bytes], { type: 'image/gif' });
   } else {
-    if (result.animated) notes.push('动态内容导出静态格式：已取首帧定格（建议改用 GIF）。');
+    if (result.animated) notes.push('动态内容导出静态格式：已取首帧定格（建议改用 GIF）。 / Animated content exported as a static format: the first frame is used (consider GIF).');
     const first = result.frames[0];
     if (fmt === 'bmp') {
       blob = new Blob([encodeBMP(first)], { type: 'image/bmp' });

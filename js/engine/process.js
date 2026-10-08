@@ -15,7 +15,7 @@ export function parseBg(c) {
   if (s.length === 6 && /^[0-9a-fA-F]{6}$/.test(s)) {
     return [parseInt(s.slice(0, 2), 16), parseInt(s.slice(2, 4), 16), parseInt(s.slice(4, 6), 16)];
   }
-  throw new EngineError(`无法识别的背景色：${c}（支持 black/white/#RRGGBB）。`);
+  throw new EngineError(`无法识别的背景色：${c}（支持 black/white/#RRGGBB）。 / Unknown background color: ${c} (allowed black/white/#RRGGBB).`);
 }
 
 /* ---------------- F4 白底 Logo ---------------- */

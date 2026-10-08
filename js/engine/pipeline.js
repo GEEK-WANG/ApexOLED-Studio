@@ -29,28 +29,28 @@ export function makeRenderOptions(partial = {}) {
 
 export function validateOptions(opts) {
   if (!(1 <= Math.round(opts.fps) && Math.round(opts.fps) <= 60)) {
-    throw new EngineError(`帧率必须在 1~60 之间（当前 ${opts.fps}）。`);
+    throw new EngineError(`帧率必须在 1~60 之间（当前 ${opts.fps}）。 / FPS must be 1-60 (got ${opts.fps}).`);
   }
   if (!['cover', 'fit'].includes(opts.mode)) {
-    throw new EngineError(`适配模式仅支持 cover/fit（当前 ${opts.mode}）。`);
+    throw new EngineError(`适配模式仅支持 cover/fit（当前 ${opts.mode}）。 / Mode must be cover/fit (got ${opts.mode}).`);
   }
   if (!['bw', 'gray', 'color'].includes(opts.colors)) {
-    throw new EngineError(`色彩模式仅支持 bw/gray/color（当前 ${opts.colors}）。`);
+    throw new EngineError(`色彩模式仅支持 bw/gray/color（当前 ${opts.colors}）。 / Color mode must be bw/gray/color (got ${opts.colors}).`);
   }
   if (!(2 <= Math.round(opts.palette) && Math.round(opts.palette) <= 256)) {
-    throw new EngineError(`调色板颜色数必须在 2~256 之间（当前 ${opts.palette}）。`);
+    throw new EngineError(`调色板颜色数必须在 2~256 之间（当前 ${opts.palette}）。 / Palette size must be 2-256 (got ${opts.palette}).`);
   }
   if (!['auto', 'none', 'bayer'].includes(opts.dither)) {
-    throw new EngineError(`抖动仅支持 auto/none/bayer（当前 ${opts.dither}）。`);
+    throw new EngineError(`抖动仅支持 auto/none/bayer（当前 ${opts.dither}）。 / Dither must be auto/none/bayer (got ${opts.dither}).`);
   }
   if (!['none', 'light', 'strong'].includes(opts.enhance)) {
-    throw new EngineError(`增强仅支持 none/light/strong（当前 ${opts.enhance}）。`);
+    throw new EngineError(`增强仅支持 none/light/strong（当前 ${opts.enhance}）。 / Enhance must be none/light/strong (got ${opts.enhance}).`);
   }
   if (opts.duration != null && opts.duration <= 0) {
-    throw new EngineError('视频截取时长必须大于 0。');
+    throw new EngineError('视频截取时长必须大于 0。 / Video clip duration must be > 0.');
   }
   if (opts.maxFrames != null && opts.maxFrames <= 0) {
-    throw new EngineError('最多帧数必须大于 0。');
+    throw new EngineError('最多帧数必须大于 0。 / Max frames must be > 0.');
   }
 }
 
@@ -76,7 +76,7 @@ export function render(seq, opts) {
   if (opts.effect && opts.effect !== 'none') {
     const [inSpec, outSpec] = parseEffectSpec(opts.effect);
     if (animated) {
-      warnings.push('动画效果仅对静态图片生效，已忽略。');
+      warnings.push('动画效果仅对静态图片生效，已忽略。 / Animation effects apply to static images only; ignored.');
     } else if (inSpec || outSpec) {
       const built = buildEffectFrames(frames[0], {
         inEffect: inSpec, outEffect: outSpec,

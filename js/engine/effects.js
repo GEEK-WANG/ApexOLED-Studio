@@ -57,7 +57,7 @@ export function wipe(frame, p, direction = 'l2r') {
         case 'tr2bl': m = ((w - 1 - x) + y) < dp; break;
         case 'bl2tr': m = (x + (h - 1 - y)) < dp; break;
         case 'br2tl': m = ((w - 1 - x) + (h - 1 - y)) < dp; break;
-        default: throw new EngineError(`未知的擦除方向：${direction}（可选 ${WIPE_DIRECTIONS.join('/')}）`);
+        default: throw new EngineError(`未知的擦除方向：${direction}（可选 ${WIPE_DIRECTIONS.join('/')}） / Unknown wipe direction: ${direction} (allowed ${WIPE_DIRECTIONS.join('/')})`);
       }
       out[i] = u8(src[i] * m);
       out[i + 1] = u8(src[i + 1] * m);
@@ -105,7 +105,7 @@ export function blinds(frame, p, direction = 'h') {
   let band;
   if (direction === 'h') band = Math.max(2, Math.floor(h / 5));
   else if (direction === 'v') band = Math.max(2, Math.floor(w / 8));
-  else throw new EngineError(`未知的百叶窗方向：${direction}（可选 h/v）`);
+  else throw new EngineError(`未知的百叶窗方向：${direction}（可选 h/v） / Unknown blinds direction: ${direction} (allowed h/v)`);
   for (let y = 0, i = 0; y < h; y++) {
     for (let x = 0; x < w; x++, i += 4) {
       const m = ((direction === 'h' ? y : x) % band) < p * band ? 1 : 0;
@@ -136,7 +136,7 @@ export function scanline(frame, p, direction = 't2b') {
       for (let x = 0; x < w; x++, o += 4) out[o] = out[o + 1] = out[o + 2] = 255;
     }
   } else {
-    throw new EngineError(`未知的扫描线方向：${direction}（可选 t2b/b2t）`);
+    throw new EngineError(`未知的扫描线方向：${direction}（可选 t2b/b2t） / Unknown scanline direction: ${direction} (allowed t2b/b2t)`);
   }
   return makeFrame(w, h, out);
 }
@@ -208,13 +208,13 @@ function parseSingle(part) {
   const name = nameRaw.trim().toLowerCase();
   const direction = dirRaw ? dirRaw.trim().toLowerCase() : null;
   if (!REGISTRY.has(name)) {
-    throw new EngineError(`未知效果：${part}（可选 ${effectNames().join('/')}）`);
+    throw new EngineError(`未知效果：${part}（可选 ${effectNames().join('/')}） / Unknown effect: ${part} (allowed ${effectNames().join('/')})`);
   }
   const entry = REGISTRY.get(name);
   let dir = direction;
   if (dir === null || dir === '') dir = entry.defaultDirection;
   else if (entry.allowed.size && !entry.allowed.has(dir)) {
-    throw new EngineError(`效果 ${name} 不支持方向 ${dir}（可选 ${[...entry.allowed].sort().join('/')}）`);
+    throw new EngineError(`效果 ${name} 不支持方向 ${dir}（可选 ${[...entry.allowed].sort().join('/')}） / Effect ${name} does not support direction ${dir} (allowed ${[...entry.allowed].sort().join('/')})`);
   }
   return { name, direction: dir };
 }
@@ -225,7 +225,7 @@ export function parseEffectSpec(s) {
   if (!s || s.toLowerCase() === 'none') return [null, null];
   const parts = s.split('+');
   if (parts.length > 2) {
-    throw new EngineError('效果表达式最多包含 入场+退场 两个效果，如 wipe:l2r+fade。');
+    throw new EngineError('效果表达式最多包含 入场+退场 两个效果，如 wipe:l2r+fade。 / Effect expression may contain at most in+out effects, e.g. wipe:l2r+fade.');
   }
   const first = parseSingle(parts[0]);
   const second = parts.length === 2 ? parseSingle(parts[1]) : parseSingle(parts[0]);
@@ -246,7 +246,7 @@ function segFrames(seconds, fps) {
 export function buildEffectFrames(base, cfg) {
   // cfg: {inEffect, outEffect, inDuration, holdDuration, outDuration, gapDuration, fps}
   for (const k of ['inDuration', 'holdDuration', 'outDuration', 'gapDuration']) {
-    if (cfg[k] < 0) throw new EngineError(`效果时长不能为负：${k}=${cfg[k]}`);
+    if (cfg[k] < 0) throw new EngineError(`效果时长不能为负：${k}=${cfg[k]} / Effect durations must be non-negative: ${k}=${cfg[k]}`);
   }
   const fps = cfg.fps;
   let nIn = segFrames(cfg.inDuration, fps);
@@ -255,14 +255,14 @@ export function buildEffectFrames(base, cfg) {
   let nGap = segFrames(cfg.gapDuration, fps);
   const total = nIn + nHold + nOut + nGap;
   const warnings = [];
-  if (total === 0) throw new EngineError('效果总时长为 0，请调大 进场/停留/退场/黑屏 时长。');
+  if (total === 0) throw new EngineError('效果总时长为 0，请调大 进场/停留/退场/黑屏 时长。 / Total effect duration is 0; increase in/hold/out/gap.');
   if (total > MAX_FRAMES) {
     const scale = MAX_FRAMES / total;
     nIn = roundHalfEven(nIn * scale);
     nHold = roundHalfEven(nHold * scale);
     nOut = roundHalfEven(nOut * scale);
     nGap = MAX_FRAMES - nIn - nHold - nOut;
-    warnings.push(`效果总帧数超过 ${MAX_FRAMES}，已按比例压缩为 ${MAX_FRAMES} 帧（${(MAX_FRAMES / fps).toFixed(1)} 秒）。`);
+    warnings.push(`效果总帧数超过 ${MAX_FRAMES}，已按比例压缩为 ${MAX_FRAMES} 帧（${(MAX_FRAMES / fps).toFixed(1)} 秒）。 / Effect exceeds ${MAX_FRAMES} frames; compressed proportionally to ${MAX_FRAMES} (${(MAX_FRAMES / fps).toFixed(1)}s).`);
   }
 
   const frames = [];
