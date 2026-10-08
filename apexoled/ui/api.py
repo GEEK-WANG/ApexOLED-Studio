@@ -126,11 +126,19 @@ class OledApi:
                 "exts": sorted(SUPPORTED_EXTS)}
 
     # ---- 素材 ----
+    @staticmethod
+    def _window():
+        """当前 pywebview 主窗口（对话框是 Window 实例方法，非模块函数）。"""
+        import webview
+        if not webview.windows:
+            raise RuntimeError("GUI 窗口尚未就绪。")
+        return webview.windows[0]
+
     def pick_file(self) -> Optional[str]:
         """原生文件选择对话框；取消返回 None。"""
         import webview
-        r = webview.create_file_dialog(
-            webview.OPEN_DIALOG,
+        r = self._window().create_file_dialog(
+            webview.FileDialog.OPEN,
             allow_multiple=False,
             file_types=("图片 / GIF / 视频 (*.png;*.jpg;*.jpeg;*.bmp;*.webp;"
                         "*.gif;*.apng;*.mp4;*.webm;*.mov;*.mkv;*.avi;*.m4v)",
@@ -176,8 +184,8 @@ class OledApi:
     def save_dialog(self, default_name: str) -> Optional[str]:
         """保存位置对话框；取消返回 None。"""
         import webview
-        r = webview.create_file_dialog(
-            webview.SAVE_DIALOG,
+        r = self._window().create_file_dialog(
+            webview.FileDialog.SAVE,
             save_filename=str(default_name or "output"),
             file_types=("GIF 动图 (*.gif)", "PNG (*.png)", "JPEG (*.jpg)",
                         "BMP (*.bmp)", "所有文件 (*.*)"))
