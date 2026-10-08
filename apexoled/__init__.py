@@ -6,7 +6,7 @@
 """
 
 APP_NAME = "ApexOLED Studio"
-VERSION = "2.0.0a1"
+VERSION = "2.0.0b1"
 
 # 赛睿 Apex Pro TKL OLED 屏硬性规格
 WIDTH = 128

@@ -40,6 +40,12 @@ def effect_names():
     return sorted(_REGISTRY)
 
 
+def effect_meta():
+    """UI 下拉数据源：name → {direction: 默认方向, directions: 可选方向列表}。"""
+    return {name: {"direction": default, "directions": sorted(allowed)}
+            for name, (_fn, default, allowed) in _REGISTRY.items()}
+
+
 def _parse_single(part: str) -> EffectSpec:
     name, _, direction = part.partition(":")
     name = name.strip().lower()

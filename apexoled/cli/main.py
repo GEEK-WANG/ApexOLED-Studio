@@ -114,8 +114,9 @@ def main(argv=None):
     args = parse_args(argv)
 
     if args.gui:
-        print("图形界面（pywebview + Web UI）将在 v2.0-beta 提供，当前请使用命令行模式。")
-        sys.exit(1)
+        from ..ui.app import launch
+        launch()
+        return
 
     if not args.inputs:
         print("未指定输入文件。运行 apexoled --help 查看用法。")
