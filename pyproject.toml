@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "apexoled"
+version = "2.0.0a1"
+description = "把任意图片/GIF/视频转换为赛睿 Apex Pro TKL OLED 屏（128×40 @10FPS 无限循环）可用的动图与图片"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = [
+    "Pillow>=10.0",
+    "numpy>=1.24",
+    "pywebview>=5.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+apexoled = "apexoled.cli.main:main"
+
+[tool.setuptools.packages.find]
+include = ["apexoled*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
