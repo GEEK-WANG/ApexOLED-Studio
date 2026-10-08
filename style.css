@@ -1,4 +1,4 @@
-/* ApexOLED Studio v2 —— 深色扁平（赛睿黑橙） */
+/* ApexOLED Studio v3 —— 深色扁平（赛睿黑橙）· Web 版 */
 :root {
   --bg: #0e1014;
   --panel: #161a22;
@@ -17,11 +17,10 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  height: 100%;
   background: var(--bg);
   color: var(--text);
   font: 13px/1.5 system-ui, "Segoe UI", "Microsoft YaHei", sans-serif;
-  overflow: hidden;
+  min-height: 100%;
 }
 
 /* ---------- 顶栏 ---------- */
@@ -33,6 +32,9 @@ header {
   padding: 0 18px;
   background: var(--panel);
   border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 .logo-mark {
   width: 22px; height: 14px;
@@ -41,16 +43,16 @@ header {
   box-shadow: inset 0 -5px 0 rgba(0,0,0,.25);
 }
 header b { font-size: 15px; letter-spacing: .3px; }
+header .tag { color: var(--muted); font-size: 12px; }
 header .ver { margin-left: auto; color: var(--muted); font-size: 12px; }
 
 /* ---------- 布局 ---------- */
 main {
   display: grid;
-  grid-template-columns: 302px 1fr;
-  height: calc(100% - 52px);
+  grid-template-columns: 320px 1fr;
+  gap: 0;
+  min-height: calc(100vh - 52px - 40px);
 }
-
-/* ---------- 左侧参数面板 ---------- */
 #panel {
   overflow-y: auto;
   background: var(--panel);
@@ -105,6 +107,7 @@ input[type="range"] {
   height: var(--ctrl-h);
   accent-color: var(--accent);
 }
+#advanced input[type="range"] { margin-top: -4px; }
 
 .rangeval {
   display: flex;
@@ -134,6 +137,35 @@ input[type="range"] {
   background: var(--accent-soft);
   color: var(--accent);
   font-weight: 600;
+}
+
+/* 效果快捷 chips */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chips button {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .12s;
+}
+.chips button:hover { border-color: var(--accent); color: var(--accent); }
+.chips button.on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.chips button.custom {
+  border-style: dashed;
+  color: var(--text);
 }
 
 .checkline {
@@ -172,6 +204,27 @@ button.ghost {
 }
 button.ghost:hover { border-color: var(--accent); color: var(--accent); }
 
+/* ---------- 高级参数 ---------- */
+#advanced {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+}
+#advanced summary {
+  cursor: pointer;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  user-select: none;
+}
+#advanced summary:hover { color: var(--accent); }
+#advanced > .field, #advanced > .checkline { margin: 0 12px 10px; }
+#advanced .metric-row { margin: 4px 0 8px; }
+
 /* ---------- 素材区 ---------- */
 #dropzone {
   border: 1.5px dashed var(--border);
@@ -195,8 +248,8 @@ button.ghost:hover { border-color: var(--accent); color: var(--accent); }
   word-break: break-all;
 }
 #src-info b { color: var(--text); }
-#crop-label { font-size: 12px; }
-#crop-label code { color: var(--accent); font-family: Consolas, monospace; }
+
+#upload-hint-mini { font-size: 12px; color: var(--muted); }
 
 /* ---------- 右侧舞台 ---------- */
 #stage {
@@ -229,9 +282,18 @@ button.ghost:hover { border-color: var(--accent); color: var(--accent); }
   border-radius: 4px;
   cursor: crosshair;
   display: block;
-  image-rendering: auto;
+  touch-action: none;
 }
-#crop-hint { margin-top: 6px; font-size: 12px; color: var(--muted); }
+.crop-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.crop-bar code { color: var(--accent); font-family: Consolas, monospace; }
 
 /* OLED 预览 */
 #oled-row {
@@ -243,15 +305,15 @@ button.ghost:hover { border-color: var(--accent); color: var(--accent); }
 .oled-box { text-align: center; }
 .oled-box .cap { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
 #oled-1x { width: 128px; height: 40px; image-rendering: pixelated; background: #000; border: 1px solid var(--border); }
-#oled-4x { width: 512px; height: 160px; image-rendering: pixelated; background: #000; border: 1px solid var(--border); }
+#oled-4x { width: 512px; height: 160px; image-rendering: pixelated; background: #000; border: 1px solid var(--border); max-width: 100%; }
 
 /* 播放控制 */
 #player-bar {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-top: 12px;
 }
-#btn-play { width: 74px; }
 #frame-pos {
   font-variant-numeric: tabular-nums;
   color: var(--muted);
@@ -260,7 +322,6 @@ button.ghost:hover { border-color: var(--accent); color: var(--accent); }
 }
 #render-stats { margin-left: auto; font-size: 12px; color: var(--muted); }
 #render-stats b { color: var(--text); }
-#render-stats .warn-count { color: var(--accent); }
 
 /* 警告条 */
 #warn-area { display: flex; flex-direction: column; gap: 4px; }
@@ -273,6 +334,11 @@ button.ghost:hover { border-color: var(--accent); color: var(--accent); }
   padding: 6px 10px;
 }
 
+/* 上传指引 */
+.guide { padding-left: 20px; color: var(--muted); font-size: 12.5px; }
+.guide li { margin-bottom: 4px; }
+.guide b { color: var(--text); }
+
 /* 帧率/时长小卡 */
 .metric-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .metric {
@@ -284,11 +350,20 @@ button.ghost:hover { border-color: var(--accent); color: var(--accent); }
 }
 .metric .k { font-size: 11px; color: var(--muted); }
 .metric .v { font-size: 14px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
-.metric .v.over { color: var(--danger); }
+
+/* ---------- 页脚 ---------- */
+footer {
+  padding: 12px 18px;
+  color: var(--muted);
+  font-size: 12px;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+}
+footer a { color: var(--accent); text-decoration: none; }
 
 /* ---------- Toast ---------- */
 #toast {
-  position: absolute;
+  position: fixed;
   left: 50%;
   bottom: 28px;
   transform: translateX(-50%) translateY(20px);
@@ -304,3 +379,11 @@ button.ghost:hover { border-color: var(--accent); color: var(--accent); }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 #toast.err { background: #3a1f22; color: #ff9c9c; border: 1px solid #5c2b30; }
 #toast.ok { background: #17301f; color: #7fe0a8; border: 1px solid #235c39; }
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 860px) {
+  main { grid-template-columns: 1fr; min-height: auto; }
+  #panel { border-right: 0; border-bottom: 1px solid var(--border); }
+  #oled-4x { width: 100%; height: auto; }
+  header .tag { display: none; }
+}

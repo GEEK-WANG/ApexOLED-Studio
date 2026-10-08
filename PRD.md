@@ -3,9 +3,9 @@
 | 项 | 内容 |
 |---|---|
 | 产品名称 | ApexOLED Studio（赛睿 OLED 动图工坊） |
-| 文档版本 | v2.0（最终形态定稿版） |
+| 文档版本 | v3.0（Web-only 形态定稿版） |
 | 日期 | 2026-10-08 |
-| 状态 | 已定稿（经两轮引导式评审收敛，待排期实施） |
+| 状态 | 方向定稿，实施中 |
 | 负责人 | 用户 / 豆包 |
 
 **变更记录**
@@ -14,6 +14,7 @@
 |---|---|---|
 | v1.0 | 2026-10-08 | 初稿：v1.0/v1.1 已实现盘点 + v2.0 新增需求草案（N1/N2） |
 | v2.0 | 2026-10-08 | 最终形态定稿：架构重构决议、pywebview + Web UI、帧级渲染引擎、N2 效果全量、双通道交付、v2.1 增值模块规划 |
+| v3.0 | 2026-10-08 | 形态重大转向：**Web-only**（GitHub Pages 托管、零安装零构建）；pywebview/CLI/EXE 交付通道退役；gamesense 实时上屏移出范围（调研归档），降级为「官方合作提交」副线；UI 定为极简两步流 |
 
 ---
 
@@ -23,8 +24,14 @@
 
 - 硬性规格：**128 × 40 像素**、**10 帧/秒**、**无限循环**（Apex Pro TKL OLED 原生分辨率与刷新上限）
 - 上传链路：SteelSeries Engine（GG）→ 键盘 → OLED & Settings → Edit OLED Image → Upload From File
-- 技术方案（v2.0 重构后）：**Python 3 + pywebview（桌面壳）+ Web UI + Pillow/numpy 帧级渲染引擎**；FFmpeg 仅承担视频解码；允许 pip 依赖（v1.x「零第三方依赖」约束解除）
-- 产品定位：认真打磨的**开源桌面作品**（Win 优先）——开源仓库、EXE 免安装发版、文档与测试齐备
+- 技术方案（v3.0 定稿）：**纯 Web 应用**——原生 HTML/JS 零构建静态站；解码全靠浏览器原生能力（img/canvas 解图片 GIF、video+drawImage 抽视频帧，**完全不需要 FFmpeg**）；JS 帧级渲染引擎（逐行为对齐 Python 基准版）
+- 托管与分发：**GitHub Pages**——用户零安装、零下载，打开网页即用；图片全程本地处理，不上传任何服务器
+- 产品定位：认真打磨的**开源 Web 工具**——单页应用、无后端、无追踪
+
+**v3.0 两大方向（用户定稿，不再动摇）**：
+
+1. **主线**：完成 Web 工具全功能，上传 GitHub，以 Pages 网站托管为用户提供图片/动图生成服务；用户生成想要的图片后自行到赛睿驱动内上传更改
+2. **副线（主线完成后）**：经 steelseries.com/developer 官方渠道把工具提交到赛睿官方驱动生态（参考已被收录的 ImageSync 项目；素材要求：330×200 PNG 应用磁贴、200×50 透明 logo、≤200 字英文描述）
 
 ## 二、目标与背景
 
@@ -33,8 +40,8 @@
 1. **清晰**：128×40 小屏上文字/图形可辨识，尤其白底 logo 文字锐利
 2. **好看**：默认黑白像素风格（社区公认 OLED 上最清晰的呈现），可选灰度/彩色
 3. **生动**：静态图片也能带 PPT 式动画（淡入淡出 / 擦除 / 揭开等 8 类效果）
-4. **省心**：框选区域、批量转换、GUI 与命令行双入口
-5. **所见即所得（v2.0 新增）**：实时预览即成品，改参数立刻看到键盘上的真实效果，消灭"转换 → 打开 HTML → 再调"的循环
+4. **省心**：打开网页即用——拖图 → 选效果 → 导出；框选等进阶能力折叠收纳，不吓退小白
+5. **所见即所得**：实时预览即成品，改参数立刻看到键盘上的真实效果，消灭"转换 → 打开预览 → 再调"的循环
 
 ### 2.2 OLED 硬件约束（背景痛点）
 
@@ -56,14 +63,14 @@
 |---|---|---|
 | 赛睿 Apex Pro TKL 用户 | 上传个人 logo、动漫图、像素画、二维码 | 图案在小屏清晰可读 |
 | 内容爱好者 | 用贴吧/论坛分享的 128×40 黑白图思路自制 | 黑白像素风、可复现 |
-| 批量使用者 | 多张素材一次处理 | 文件夹批量转换 |
+| 批量使用者 | 多张素材一次处理 | 多文件队列（后置；v3.0 逐张处理可用） |
 | 开源社区（v2.0 新增） | 使用、反馈、贡献效果预设与代码 | 可安装、可打包、文档完善 |
 
 ## 四、产品范围
 
-**v2.0 范围内**：架构重构（帧级引擎 + pywebview UI）；实时预览闭环；N1 五格式导出；N2 效果系统全量（P0+P1+P2）；CLI 批量保留；工程化（git、测试、CI、EXE 打包）。
+**v3.0 范围内**：Web 版全功能对等移植（JS 帧级引擎：解码 → 预处理 → 8 类效果 → 量化 → GIF/PNG/JPG/BMP 导出）；极简两步流 UI（主界面极简，框选/时间轴/调色板折叠进「高级」区）；GitHub Pages 托管上线；JS↔Python 对拍验证。
 
-**范围外（不做 / 后置）**：OLED 固件刷写；键盘灯光联动；macOS 原生支持；GameSense 一键试屏（本轮评审未纳入，列为远期备选，引擎模块化为其留口）；增值模块 M1–M3（→ v2.1）。
+**范围外（不做 / 后置）**：OLED 固件刷写；键盘灯光联动；gamesense 实时上屏（调研成果归档，转化为「官方合作提交」副线的素材与谈判筹码）；Python 桌面/CLI 的持续维护（对拍验证通过后退役，git 历史保留作为行为规范存档）；文件夹批量转换（Web 形态弱化，多文件队列后置）；增值模块 M1–M3（远期）。
 
 ## 五、最终形态蓝图（评审结论）
 
@@ -71,35 +78,38 @@
 
 | # | 决策项 | 结论 |
 |---|---|---|
-| 1 | 产品定位 | 认真打磨的开源作品（现代化 UI + 完善文档 + git 版本管理） |
-| 2 | 依赖约束 | 允许 pip 依赖（Pillow/numpy 等），解除 v1.x 零依赖约束 |
-| 3 | 界面方案 | pywebview 桌面壳 + Web 界面（取代 tkinter） |
-| 4 | v2.0 路径 | 借机重构架构，再在新技术栈上落地 PRD 功能，一步到位 |
-| 5 | 效果范围 | N2 全量（P0+P1+P2 一次做齐） |
-| 6 | 交付形态 | EXE 免安装 + pipx/pip 双通道 |
-| 7 | 野心清单 | 像素文字生成器、效果预设库、素材/小工具中心（→ v2.1） |
+| 1 | 产品形态 | **纯 Web 静态站**（v3.0 定稿）：用户零安装零下载，打开网页即用 |
+| 2 | 交付通道 | GitHub Pages 托管 + 开源仓库 |
+| 3 | 前端栈 | **原生 HTML/JS + 零构建**（无 Node/Vite 依赖，克隆即改） |
+| 4 | 解码方案 | 浏览器原生能力：img/canvas（图片、GIF 逐帧）+ video/drawImage（视频抽帧），完全不需要 FFmpeg |
+| 5 | 渲染引擎 | JS 帧级引擎，**逐行为对齐 Python 基准版**（127 项 pytest 为行为规范） |
+| 6 | 效果范围 | N2 全量对等移植（P0+P1+P2） |
+| 7 | gamesense | 不做实时上屏；调研成果归档，作为官方合作提交副线的素材 |
+| 8 | Python 代码 | JS 对拍验证通过后退役删除（git 历史保留，作为行为规范存档） |
 
 ### 5.2 目标架构
 
 | 层 | 组成 | 说明 |
 |---|---|---|
-| 入口层 | pywebview 桌面窗（Web UI）／ CLI 命令行 | GUI：拖拽上传、框选、参数联动、时间轴；CLI：批量、脚本化 |
-| 桥接 | js_api 调用 ／ base64 帧序列回传 | 前端调引擎渲染，引擎将真实 128×40 帧（每帧 1~2KB）回传前端 canvas 播放 |
-| 渲染核心 | 解码 → 帧级效果引擎 → 量化导出 | Pillow 解码图片/GIF；FFmpeg 仅视频抽帧；8 类效果全帧级实现；1bit 平滑递色；导出 GIF/PNG/JPG/BMP |
-| 交付层 | GitHub Releases（EXE 免安装）／ pipx · pip | 双通道发版；键盘侧仍经 SteelSeries Engine 手动上传 |
+| 入口层 | 单页 Web 应用（index.html + 原生 JS） | 拖拽/点选上传、效果选择、黑白/灰度切换、导出下载；框选/时间轴/调色板折叠进「高级」区 |
+| 引擎层 | 原生 ES 模块 js/engine/*（零依赖） | decode（浏览器原生解码）→ process（logo 优化/锐化/cover-fit 缩放）→ effects（8 类帧变换 + 四段时间轴）→ quantize（1bit/灰度/彩色 + FS/Bayer/无抖动）→ export（GIF89a/PNG/JPG/BMP） |
+| 预览层 | canvas 逐帧播放 | 预览帧与导出帧同源同参数，预览即成品 |
+| 托管层 | GitHub Pages | 纯静态文件；无后端、无 API，图片全程本地计算，隐私友好 |
+| 上传链路 | SteelSeries Engine 手动上传 | 用户导出文件后自行到驱动内 OLED & Settings → Edit OLED Image 上传 |
 
-**实时预览闭环（本架构的灵魂）**：用户在 Web UI 改参数 → Python 引擎立刻渲染**真实的 128×40 帧序列**（base64 回传，百毫秒级）→ 前端 canvas 按 1:1 与放大逐帧播放。预览帧与导出帧同源同参数，**预览即成品，零偏差**——这是对 2.3 节反馈回路问题的架构级解答。
+**实时预览闭环（本架构的灵魂）**：用户在 UI 改参数 → JS 引擎立刻渲染**真实的 128×40 帧序列**并绘制到 canvas 播放（毫秒级，无跨语言桥接开销）。预览帧与导出帧同源同参数，**预览即成品，零偏差**——这是对 2.3 节反馈回路问题的架构级解答。
 
 ### 5.3 技术选型
 
 | 层 | 选型 | 说明 |
 |---|---|---|
-| 桌面壳 | pywebview | Windows 走 WebView2（Win10/11 系统自带，低风险） |
-| 前端 | 待定（原生 HTML/JS vs Vite+Vue） | 见风险表 #1，实施规划期定 |
-| 渲染引擎 | Pillow + numpy | 每个效果 = 每帧一个变换函数；量化/递色全自主可控 |
-| 解码 | Pillow（图片/GIF/APNG）；FFmpeg（视频） | FFmpeg 外置，仅视频输入场景需要 |
-| 导出 | Pillow | GIF 逐帧编码（delay=100ms 即 10FPS，loop=0）；PNG/JPG/BMP |
-| 打包 | PyInstaller + GitHub Actions | EXE 发版 + pip 包结构，双通道 |
+| 前端 | 原生 HTML/CSS/JS（ES Modules） | 零构建零依赖；延续 v2.0 深色黑橙 UI 风格 |
+| 解码 | 浏览器原生：ImageDecoder 逐帧抽 GIF（降级 `<img>` 单帧）；`<video>` + drawImage 抽视频帧 | 不需要 FFmpeg；视频按 10FPS 时间戳 seek 抽帧 |
+| 渲染引擎 | 纯 JS（Uint8Array 帧序列 + typed 数组运算） | 128×40 计算量毫秒级，无需 WASM；行为对齐 Python 基准 |
+| 量化 | 自研 Floyd-Steinberg 误差扩散 + 8×8 Bayer + 硬阈值 | 与 Python 版逐像素对拍一致 |
+| GIF 编码 | 自研 GIF89a 编码器（LZW + 逐帧局部调色板） | delay=100ms 即 10FPS、loop=0 无限循环；体积目标 ≤16KB |
+| 静态导出 | canvas.toBlob | PNG / JPG（quality=92）/ BMP |
+| 托管 | GitHub Pages | 仓库即站点，无 CI 构建步骤 |
 
 ## 六、v1.x 功能基线盘点（重构回归依据）
 
@@ -172,7 +182,9 @@
 
 ---
 
-## 七、v2.0 需求明细
+## 七、v2.0 需求明细（引擎行为规范）
+
+> v3.0 说明：本节自 v2.0 沿用，作为**引擎行为规范**由 JS 引擎逐条对等实现；文中 CLI 参数名视为参数语义定义（`--effect-in` = UI 的「进场时长」输入框），验收标准在 Web 版上逐条复验。
 
 ### R1 架构重构
 
@@ -285,23 +297,24 @@ CLI：`--format gif|jpg|jpeg|png|bmp`、`--quality N`。
 
 | 类别 | 要求 |
 |---|---|
-| 性能 | 实时预览首帧 < 300ms；参数变更后预览刷新 < 1s；单张导出 < 3 秒；批量线性扩展 |
+| 性能 | 预览首帧 < 300ms；参数变更后预览刷新 < 1s；单张导出 < 3 秒 |
 | 体积 | 静态 ≤ 2KB；动画 ≤ 16KB（目标） |
-| 兼容性 | Windows 10/11（WebView2 系统自带）；Python 3.9+；FFmpeg 4.x~8.x（仅视频输入需要） |
-| 健壮性 | 中文路径/非法参数/损坏文件给出中文友好提示，不崩溃 |
-| 可维护性 | engine/effects/exporters/ui/cli 分包；新增效果 = 新增一个帧变换函数；CLI 与 GUI 共用引擎 |
-| 交付物 | GitHub Releases EXE 免安装；pipx/pip 安装；README 重写；CHANGELOG |
+| 兼容性 | 现代浏览器（Chrome/Edge/Firefox/Safari 近两年版本）；移动端浏览器可浏览可用 |
+| 隐私 | 用户图片不离开浏览器——无后端、无上传、无追踪 |
+| 健壮性 | 损坏文件/不支持格式给出中文友好提示，不崩溃 |
+| 可维护性 | js/engine 按层分模块；新增效果 = 新增一个帧变换函数并注册 |
+| 交付物 | GitHub Pages 网站；README 重写；127 项 pytest 断言作为行为规范文档化保留 |
 
 ## 十、风险与未决问题
 
 | # | 问题 | 影响 | 处理 |
 |---|---|---|---|
-| 1 | 前端栈未定：原生 HTML/JS（零构建、打包简单）vs Vite+Vue（工程化、贡献者友好） | 影响 UI 开发方式与仓库结构 | 实施规划期定，倾向零构建起步 |
-| 2 | FFmpeg 分发：GPL 构建内嵌 EXE 有许可风险 | 影响 EXE 交付 | EXE 不内嵌；首启检测缺失时引导下载，仅视频输入需要；或评估 PyAV 替代 |
-| 3 | GIF ≤ 16KB 体积目标未实测 | 影响 N2 效果时长/复杂度 | 帧级引擎逐帧调色板优化 + 回归实测 |
-| 4 | OLED 播放器动画时长硬上限未验证 | 影响帧数上限（现定 60 帧） | 实机上传测试确定 |
-| 5 | WebView2 运行时缺失（老系统） | GUI 无法启动 | Win10/11 自带；检测 + 引导安装 |
-| 6 | 贴吧帖子无法程序抓取（robots 拦截） | 示例风格参考受限 | 已通过用户截图确认风格方向（v1.x 结论，沿用） |
+| 1 | GIF 逐帧解码：ImageDecoder 在 Safari 的兼容性差异 | 影响 GIF 输入的逐帧效果 | 特性检测，降级为 `<img>` 整帧显示；主流浏览器实测 |
+| 2 | 视频抽帧依赖 video.seek 精度 | 影响 10FPS 对齐 | seek 后等 seeked 事件再 drawImage；容差 ±1 帧 |
+| 3 | 自研 GIF 编码器体积控制 | 影响 ≤16KB 目标 | 逐帧局部调色板 + LZW；与 Python 版同素材对拍体积；超限时给出压缩建议 |
+| 4 | FS 递色 JS 实现与 Pillow 像素级一致性 | 影响「预览即成品」可信度 | 以 Python 版为基准做 JS↔Python 对拍（尺寸/帧数/像素抽样/体积） |
+| 5 | OLED 播放器动画时长硬上限未验证 | 影响帧数上限（现定 60 帧） | 实机上传测试确定 |
+| 6 | GitHub Pages 需要仓库先推送、后开启 | 影响上线节奏 | 提供配置指引（Settings → Pages）；仓库根目录即站点 |
 
 ## 十一、里程碑
 
@@ -309,10 +322,11 @@ CLI：`--format gif|jpg|jpeg|png|bmp`、`--quality N`。
 |---|---|---|
 | v1.0 | 基础转换（128×40 / 10FPS / 循环 / GUI+CLI / 预览） | ✅ 已完成 |
 | v1.1 | 框选、白底 logo、锐化增强、黑白默认、静态图效果 fade/wipe/reveal | ✅ 已完成（含死锁修复） |
-| v2.0-alpha | 帧级引擎重构 + 模块拆包 + CLI 全量回归（F1–F9 基线） | ⬜ 待实施 |
-| v2.0-beta | pywebview UI + 实时预览闭环 + N1 五格式 + N2 效果全量 | ⬜ 待实施 |
-| v2.0-rc | EXE 打包 + pip 通道 + 文档 + 实机验证 → 正式发版 | ⬜ 待实施 |
-| v2.1 | 增值模块 M1–M3 | ⬜ 规划中 |
+| v2.0-alpha | 帧级引擎重构 + 模块拆包 + 全量回归（108 项测试） | ✅ 已完成（94ead8f） |
+| v2.0-beta | pywebview UI + 实时预览闭环 + N1 五格式 + N2 效果全量（127 项测试） | ✅ 已完成（8a1610f / d8b6520）；实机载图缺陷未修，形态转向 Web |
+| v3.0-alpha | JS 引擎移植 + 极简两步流 UI + JS↔Python 对拍 | 🔨 实施中 |
+| v3.0-rc | GitHub Pages 上线 + Python 退役 + README 重写 | ⬜ 待实施 |
+| v3.1+ | SteelSeries 官方合作提交（副线）；增值模块 M1–M3 | ⬜ 规划中 |
 
 ## 十二、附录：参考来源
 
@@ -320,7 +334,16 @@ CLI：`--format gif|jpg|jpeg|png|bmp`、`--quality N`。
   https://steelseries.com/zh-cn/blog/steelseries-oled-gifs-and-customization-137
 - SteelSeries 支持：上传图片要求 128px×40px 黑白
   https://support.steelseries.com/hc/en-us/articles/10062077235725-Apex-7-Apex-7-TKL-Features
+- SteelSeries 开发者计划（副线官方提交入口）
+  https://steelseries.com/developer
+- gamesense SDK（OLED bitmap API 调研归档，副线技术素材）
+  https://github.com/SteelSeries/gamesense-sdk
+- ImageSync（已被官方驱动收录的同类工具，副线参考对象）
 - B 站二创：Apex Pro 小屏幕图片分享（120×40 黑白图思路）
   https://www.bilibili.com/video/BV1NA411P7hq/
 - 贴吧示例帖（黑白像素风与 Engine 递色效果）
   https://tieba.baidu.com/p/9906846053
+
+### 附：gamesense 实时上屏调研归档（2026-10-08，副线备用）
+
+结论：CORS 完全开放（`Access-Control-Allow-Origin: *`）可网页直连；OLED API 支持 `screened-128x40` 设备（640 字节位数组）与多帧循环；代理地址在 `C:\ProgramData\SteelSeries\GG\coreProps.json`（端口动态，实测 3893，需用户手动输入）；实测 bind_game_event / game_event 返回 200 但 game_metadata 报 400 "Could not decode JSON"，注册未成功、测试图案未上屏，未继续排查。若副线落地需先解决元数据注册问题。
