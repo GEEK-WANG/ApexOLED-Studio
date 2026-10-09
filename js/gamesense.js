@@ -45,7 +45,7 @@ export async function readAddressFromCoreProps() {
   return addr;
 }
 
-/* ---------------- HTTP 三级降级 ---------------- */
+/* ---------------- HTTP ---------------- */
 
 function baseUrl(addr) {
   const a = (addr || '').trim().replace(/\/+$/, '');
@@ -53,30 +53,34 @@ function baseUrl(addr) {
   return a.startsWith('http') ? a : `http://${a}`;
 }
 
-// 跨域 POST 三级尝试（GameSense 请求均为幂等状态设置，重复送达无害）：
-//   ① application/json —— 触发 CORS 预检；若 Engine 响应预检且允许跨域，可读到真实状态码（最佳）
-//   ② text/plain —— 免预检的简单请求；若 Engine 带允许跨域响应头，仍可读到响应
-//   ③ no-cors 盲发 —— 请求可达但响应不可读（opaque），视为「已发送未验证」
+// Engine 实测行为（2026-10 本机探针）：
+//   OPTIONS 预检 → 200 + Access-Control-Allow-Origin: *（预检可读，证明服务在且放行跨域）
+//   POST application/json → 200（服务端正常处理），但 POST 响应不带 CORS 头（浏览器读不到回执）
+//   POST text/plain / 无 Content-Type → 400 严格拒收
+// 策略：预检探路区分「GG 未运行」与「可达但回执不可读」；只发 application/json。
+//   预检失败 → 报无法连接；预检通过但 POST 本地被拒（读不到响应）→ 视为已送达未验证。
 async function post(addr, path, body) {
   const url = `${baseUrl(addr)}/${path}`;
-  const payload = JSON.stringify(body);
-  const attempts = [
-    () => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload }),
-    () => fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: payload }),
-    () => fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: payload, mode: 'no-cors' }),
-  ];
-  for (const attempt of attempts) {
-    let res;
-    try {
-      res = await attempt();
-    } catch (err) {
-      continue; // 网络层/CORS 拒绝 → 降级下一级
-    }
-    if (res.type === 'opaque') return { verified: false }; // 已送达，读不到状态码
-    if (!res.ok) throw new Error(`Engine 返回 HTTP ${res.status}。 / Engine replied HTTP ${res.status}.`); // 可达但报错：不再降级
-    return { verified: true };
+  let preflight;
+  try {
+    preflight = await fetch(`${baseUrl(addr)}/game_event`, {
+      method: 'OPTIONS',
+      headers: { 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'content-type' },
+    });
+  } catch {
+    throw new Error('无法连接 Engine：地址不对或 SteelSeries GG 未运行。 / Cannot reach Engine: wrong address or GG not running.');
   }
-  throw new Error('无法连接 Engine：地址不对、SteelSeries GG 未运行，或浏览器拦截了跨域请求。 / Cannot reach Engine: wrong address, GG not running, or the browser blocked the cross-origin request.');
+  if (!preflight.ok || preflight.headers.get('access-control-allow-origin') == null) {
+    throw new Error('端口可达，但不是 GameSense 服务（或未允许跨域）。 / Port reachable but not a GameSense server (or CORS denied).');
+  }
+  try {
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!res.ok) throw new Error(`Engine 返回 HTTP ${res.status}。 / Engine replied HTTP ${res.status}.`);
+    return { verified: true }; // 若未来 Engine 的 POST 响应也带 CORS 头，可读到真实回执
+  } catch (err) {
+    if (err && /HTTP \d+/.test(err.message)) throw err; // 可读的 HTTP 错误：如实上报
+    return { verified: false }; // 预检已证明服务在 → 请求已送达，仅回执不可读
+  }
 }
 
 /* ---------------- GameSense 协议 ---------------- */
