@@ -16,6 +16,17 @@ A **pure in-browser tool** — open the page and go. No Python, no FFmpeg, nothi
 
 Open **SteelSeries GG** → select the keyboard → **OLED & Settings** → **Edit OLED Image** → **Upload From File** → pick the exported file → **DONE** → **SAVE**.
 
+### Or push straight to the keyboard (no export needed)
+
+With **SteelSeries GG running**, the tool talks to it directly over its local GameSense HTTP API — the OLED updates the moment you click, and animations loop on the keyboard.
+
+1. In the **④ Send to keyboard** panel, enter the Engine address — it is the `address` field in `C:\ProgramData\SteelSeries\SteelSeries Engine 3\coreProps.json` (e.g. `127.0.0.1:3612`). Click **Read** to pick the file, or open it in Notepad and paste the value.
+2. Click **Test connection** — you should see *Connected*.
+3. Click **Push animation to keyboard** (or *Push current frame* for a still image) — the OLED updates immediately.
+4. Click **Stop** to hand the OLED back to GG.
+
+The port **changes every time GG restarts**, so re-read it if the connection fails. The page also extends GG's idle window to 60 s and sends a keep-alive heartbeat, but a **backgrounded tab may be throttled by the browser** — keep the page visible while the animation runs.
+
 ## Features
 
 - **WYSIWYG preview**: 1:1 actual size + 4x zoom, frame-by-frame player, instant re-render on every change
@@ -26,6 +37,7 @@ Open **SteelSeries GG** → select the keyboard → **OLED & Settings** → **Ed
 - **Video frame extraction**: resampled at the target frame rate; clip duration and max frames supported
 - **Multiple export formats**: GIF (looping animation) / PNG / JPG / BMP
 - **Bilingual UI**: Chinese / English, auto-detected, remembered across visits
+- **Direct push to the keyboard**: with GG running, send stills or looping animations straight to the OLED over SteelSeries' local GameSense API — no export, no driver upload, plus a *Stop* button to release the screen
 
 ## Effects
 
@@ -76,6 +88,7 @@ The engine was first built in Python (numpy + Pillow) with 127 pytest regression
 ```
 index.html / app.js / style.css   UI (zero-dependency vanilla JS)
 js/i18n.js                        zh/EN dictionary + language toggle
+js/gamesense.js                   GameSense direct push (connect / still / animation / keep-alive / stop)
 js/engine/
   core.js       constants & math helpers (fround float32 alignment, banker's rounding)
   decode.js     decoding (createImageBitmap / ImageDecoder / <video> seek)
@@ -91,11 +104,12 @@ PRD.md   product spec (v3.0, Chinese)
 ## Roadmap
 
 - ✅ Web engine (verified against the Python reference)
-- ⬜ Submit to the SteelSeries [gamesense](https://github.com/SteelSeries/gamesense) ecosystem so the tool can appear inside the official driver
+- ✅ Direct GameSense push: app self-registration, still images, looping animations, keep-alive heartbeat and a stop button — the tool appears in GG's app list on its own, no approval required
+- ⬜ Curated listing through the SteelSeries [developer form](https://steelseries.com/developer/contact-us) (tile art, description, link)
 
 ## Disclaimer
 
-For personal & educational use. Uploads use the stock SteelSeries GG driver feature.
+For personal & educational use. Direct push talks to SteelSeries GG over its documented local GameSense API; file uploads use the stock driver feature.
 Referenced: [SteelSeries gamesense-sdk](https://github.com/SteelSeries/gamesense-sdk).
 
 ---
@@ -121,6 +135,17 @@ Referenced: [SteelSeries gamesense-sdk](https://github.com/SteelSeries/gamesense
 打开 **SteelSeries GG** → 选择键盘 → **OLED & Settings** → **Edit OLED Image** →
 **Upload From File** → 选中导出的文件 → **DONE** → **SAVE**。
 
+### 或者直接推送到键盘（无需导出）
+
+**SteelSeries GG 运行时**，工具可直接通过它本机的 GameSense HTTP 接口通信 —— 点一下键盘即刻更新，动画在键盘上循环播放。
+
+1. 在 **④ 直接发送到键盘** 面板填入 Engine 地址 —— 即 `C:\ProgramData\SteelSeries\SteelSeries Engine 3\coreProps.json` 里的 `address` 字段（形如 `127.0.0.1:3612`）。点「读取」选文件，或用记事本打开该文件复制粘贴。
+2. 点「测试连接」—— 应显示「已连接」。
+3. 点「推送动画到键盘」（静图则显示「推送当前帧到键盘」）—— 键盘 OLED 立即更新。
+4. 点「停止上屏（交还 GG）」把屏幕交还驱动。
+
+GG **每次重启端口都会变**，连不上就重新读一次。页面会把驱动的休眠窗口延长到 60 秒并发送心跳保活，但**标签页切到后台可能被浏览器节流** —— 想让动画持续播放就让页面保持在前台。
+
 ## 功能
 
 - **所见即所得**：1:1 真实尺寸 + 4x 放大双预览，逐帧播放器，改参数立刻刷新
@@ -132,6 +157,7 @@ Referenced: [SteelSeries gamesense-sdk](https://github.com/SteelSeries/gamesense
 - **视频抽帧**：按帧率抽取、可限时长与最多帧数
 - **多格式导出**：GIF（动态循环）/ PNG / JPG / BMP
 - **中英双语界面**：自动识别浏览器语言，选择会被记住
+- **一键直连键盘**：GG 运行时，静图或循环动画可直接经赛睿本机 GameSense 接口上屏，无需导出文件、无需在驱动里上传，并配「停止上屏」按钮交还屏幕
 
 ## 效果一览
 
@@ -183,6 +209,7 @@ Python 版已退役（可在 git 历史中查看）。注：自检页本身目�
 ```
 index.html / app.js / style.css   UI（零依赖原生 JS）
 js/i18n.js                        中英文字典 + 语言切换
+js/gamesense.js                   GameSense 直连（连接 / 静图 / 动画 / 保活 / 停止）
 js/engine/
   core.js       常量与数学工具（fround 对齐 float32、银行家舍入）
   decode.js     解码（createImageBitmap / ImageDecoder / <video> 抽帧）
@@ -198,10 +225,11 @@ PRD.md   产品规格（v3.0，中文）
 ## 路线图
 
 - ✅ Web 版引擎（对拍验证通过）
-- ⬜ 提交至 SteelSeries gamesense 生态（[gamesense SDK](https://github.com/SteelSeries/gamesense)），
-  让工具直接出现在官方驱动的 OLED 应用列表中
+- ✅ GameSense 直连：应用自注册、静图上屏、动画循环、心跳保活与「停止上屏」按钮 ——
+  工具会自动出现在 GG 应用列表，无需审批
+- ⬜ 通过赛睿[开发者表单](https://steelseries.com/developer/contact-us)申请精选展示（瓦片图、简介、链接）
 
 ## 免责声明
 
-仅供个人学习交流使用。OLED 上传能力使用 SteelSeries GG 官驱自带功能；
+仅供个人学习交流使用。直连功能通过赛睿 GG 公开的本机 GameSense 接口通信；文件上传使用官驱自带功能。
 参考 [SteelSeries gamesense-sdk](https://github.com/SteelSeries/gamesense-sdk)。

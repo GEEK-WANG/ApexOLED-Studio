@@ -48,6 +48,14 @@ const STRINGS = {
   decoding:      { zh: '解码中…',            en: 'Decoding…' },
   fmtGifStatic:  { zh: 'GIF（需动态内容）',   en: 'GIF (animated only)' },
   fmtGifAnim:    { zh: 'GIF（动态）',         en: 'GIF (animated)' },
+  // 渲染统计 / 素材提示 / 导出回执（含 {占位符} 插值）
+  statsLine:    { zh: '{dim} · <b>{frames}</b> 帧 · {fps} FPS · 渲染 <b>{dt}</b> ms',
+                  en: '{dim} · <b>{frames}</b> frames · {fps} FPS · rendered in <b>{dt}</b> ms' },
+  hintAnimated: { zh: '动图 · <b>{frames}</b> 帧 @ {fps}FPS — 可导出 GIF 到驱动上传，或直接推送到键盘',
+                  en: 'Animated · <b>{frames}</b> frames @ {fps}FPS — export a GIF for the driver, or push straight to the keyboard' },
+  hintStatic:   { zh: '静图 — 可导出 PNG/JPG/BMP 到驱动上传，或直接推送到键盘',
+                  en: 'Static — export PNG/JPG/BMP for the driver, or push straight to the keyboard' },
+  exportDone:   { zh: '已导出 {filename}（{size}）', en: 'Exported {filename} ({size})' },
   // GameSense 直连
   gsSend:       { zh: '推送当前帧到键盘',                        en: 'Push current frame' },
   gsSendAnim:   { zh: '推送动画到键盘',                          en: 'Push animation to keyboard' },
@@ -63,12 +71,13 @@ const STRINGS = {
   gsPickOk:     { zh: '已从 coreProps.json 读取端口',             en: 'Port read from coreProps.json' },
 };
 
-export function t(key) {
+// 动态文案取词；params 提供时可插值 {name} 占位符（如 t('statsLine', { frames: 12 })）
+export function t(key, params) {
   const s = STRINGS[key];
-  return s ? s[lang] : key;
+  let v = s ? s[lang] : key;
+  if (params) v = v.replace(/\{(\w+)\}/g, (m, k) => (params[k] != null ? params[k] : m));
+  return v;
 }
-
-export function getLang() { return lang; }
 
 // 扫描静态双语节点：data-zh/data-en → textContent；data-zh-title/data-en-title → title
 export function applyStatic() {

@@ -4,7 +4,7 @@ import { decodeFile } from './js/engine/decode.js';
 import { render, makeRenderOptions, validateOptions } from './js/engine/pipeline.js';
 import { effectMeta, parseEffectSpec } from './js/engine/effects.js';
 import { defaultFormat, exportResult, downloadBlob, formatBytes, FORMATS } from './js/engine/export.js';
-import { t, getLang, onLangChange, initLang } from './js/i18n.js';
+import { t, onLangChange, initLang } from './js/i18n.js';
 import { getSavedAddress, saveAddress, readAddressFromCoreProps, registerApp, pushAnimation, heartbeat, stopGame, MAX_PUSH_FRAMES } from './js/gamesense.js';
 
 const $ = id => document.getElementById(id);
@@ -217,10 +217,7 @@ function readNum(id) {
 }
 
 function statsHtml(s) {
-  const dim = `${WIDTH}×${HEIGHT}`;
-  return getLang() === 'zh'
-    ? `${dim} · <b>${s.frames}</b> 帧 · ${s.fps} FPS · 渲染 <b>${s.dt}</b> ms`
-    : `${dim} · <b>${s.frames}</b> frames · ${s.fps} FPS · rendered in <b>${s.dt}</b> ms`;
+  return t('statsLine', { dim: `${WIDTH}×${HEIGHT}`, frames: s.frames, fps: s.fps, dt: s.dt });
 }
 
 /* ---------------- 预览播放器 ---------------- */
@@ -493,14 +490,9 @@ function updateExportUI() {
     gifOpt.disabled = false;
     gifOpt.textContent = t('fmtGifAnim');
   }
-  const zh = getLang() === 'zh';
   $('upload-hint-mini').innerHTML = r.animated
-    ? (zh
-      ? `动图 · <b>${r.frames.length}</b> 帧 @ ${r.fps}FPS，导出 GIF 后到赛睿驱动上传`
-      : `Animated · <b>${r.frames.length}</b> frames @ ${r.fps}FPS — export GIF, then upload in SteelSeries GG`)
-    : (zh
-      ? `静图 · 导出 PNG/JPG/BMP 后到赛睿驱动上传`
-      : `Static · export PNG/JPG/BMP, then upload in SteelSeries GG`);
+    ? t('hintAnimated', { frames: r.frames.length, fps: r.fps })
+    : t('hintStatic');
   updateGsUI(); // 发送按钮随渲染结果可用性联动
 }
 
@@ -513,9 +505,7 @@ $('btn-export').onclick = async () => {
   try {
     const { blob, filename, notes, size } = await exportResult(r, fmt, quality, base);
     downloadBlob(blob, filename);
-    toast(getLang() === 'zh'
-      ? `已导出 ${filename}（${formatBytes(size)}）`
-      : `Exported ${filename} (${formatBytes(size)})`, 'ok');
+    toast(t('exportDone', { filename, size: formatBytes(size) }), 'ok');
     if (notes.length) showWarnings([...r.warnings, ...notes]);
   } catch (err) {
     toast(err.message || String(err), 'err');
