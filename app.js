@@ -5,6 +5,7 @@ import { render, makeRenderOptions, validateOptions } from './js/engine/pipeline
 import { effectMeta, parseEffectSpec } from './js/engine/effects.js';
 import { defaultFormat, exportResult, downloadBlob, formatBytes, FORMATS } from './js/engine/export.js';
 import { t, getLang, onLangChange, initLang } from './js/i18n.js';
+import { getSavedAddress, saveAddress, readAddressFromCoreProps, registerApp, pushFrame } from './js/gamesense.js';
 
 const $ = id => document.getElementById(id);
 
@@ -19,6 +20,7 @@ const state = {
   frameIdx: 0,
   renderToken: 0,     // 异步竞态保护
   lastStats: null,
+  gs: { status: 'gsIdle', msg: null, ok: false, sending: false }, // GameSense 直连状态
 };
 
 /* ---------------- 通用 UI ---------------- */
@@ -474,7 +476,7 @@ function updateExportUI() {
   const sel = $('sel-format');
   $('btn-export').disabled = !r;
   $('btn-play').disabled = !r || r.frames.length < 2;
-  if (!r) { $('upload-hint-mini').textContent = ''; return; }
+  if (!r) { $('upload-hint-mini').textContent = ''; updateGsUI(); return; }
 
   // 内容类型（动/静）变化时自动联动推荐格式（N1 联动规则）
   if (r.animated !== updateExportUI._lastAnimated) {
@@ -499,6 +501,7 @@ function updateExportUI() {
     : (zh
       ? `静图 · 导出 PNG/JPG/BMP 后到赛睿驱动上传`
       : `Static · export PNG/JPG/BMP, then upload in SteelSeries GG`);
+  updateGsUI(); // 发送按钮随渲染结果可用性联动
 }
 
 $('btn-export').onclick = async () => {
@@ -519,6 +522,70 @@ $('btn-export').onclick = async () => {
   }
 };
 
+/* ---------------- GameSense 直连（G1 连接层 / G2 单帧上屏） ---------------- */
+
+function updateGsUI() {
+  const g = state.gs;
+  const el = $('gs-status');
+  el.textContent = g.msg || t(g.status);
+  el.className = g.ok ? 'ok' : (g.msg ? 'err' : '');
+  $('gs-send').textContent = g.sending ? t('gsSending') : t('gsSend');
+  $('gs-send').disabled = !state.result || g.sending;
+}
+
+function gsSet(fields) { Object.assign(state.gs, fields); updateGsUI(); }
+
+async function gsRegister(manual) {
+  const addr = $('gs-address').value.trim();
+  try {
+    const r = await registerApp(addr);
+    gsSet({ status: r.verified ? 'gsOk' : 'gsUnverified', msg: null, ok: true });
+    saveAddress(addr);
+  } catch (err) {
+    gsSet({ status: 'gsIdle', msg: err.message || String(err), ok: false });
+    if (manual) toast(err.message || String(err), 'err');
+  }
+}
+
+function bindGamesense() {
+  $('gs-address').value = getSavedAddress();
+  $('gs-address').onchange = () => saveAddress($('gs-address').value.trim());
+
+  $('gs-pick').onclick = async () => {
+    try {
+      const addr = await readAddressFromCoreProps();
+      $('gs-address').value = addr;
+      saveAddress(addr);
+      toast(t('gsPickOk'), 'ok');
+    } catch (err) {
+      if (err && err.name === 'AbortError') return; // 用户取消文件选择
+      toast(err.message || String(err), 'err');
+    }
+  };
+
+  $('gs-connect').onclick = () => gsRegister(true);
+
+  $('gs-send').onclick = async () => {
+    if (!state.result || state.gs.sending) return;
+    const frame = state.result.frames[state.frameIdx] || state.result.frames[0];
+    const addr = $('gs-address').value.trim();
+    gsSet({ sending: true });
+    try {
+      await registerApp(addr); // 幂等：确保 GG 应用列表里有本应用
+      const r = await pushFrame(addr, frame);
+      gsSet({ status: r.verified ? 'gsSent' : 'gsUnverified', msg: null, ok: true });
+      saveAddress(addr);
+      toast(t('gsSent'), 'ok');
+    } catch (err) {
+      gsSet({ status: 'gsIdle', msg: err.message || String(err), ok: false });
+      toast(err.message || String(err), 'err');
+    } finally {
+      gsSet({ sending: false });
+    }
+  };
+  updateGsUI();
+}
+
 /* ---------------- 启动 ---------------- */
 
 // 切换语言后重渲染所有动态文案（静态文案由 i18n.applyStatic 扫描处理）
@@ -527,6 +594,7 @@ function applyLangUI() {
   syncEffectDropdowns();   // 同步下拉当前值
   updateCropVal();
   updateExportUI();
+  updateGsUI();
   $('btn-play').textContent = state.playing ? t('pause') : t('play');
   if (state.lastStats) setStats(statsHtml(state.lastStats));
 }
@@ -537,6 +605,7 @@ function init() {
   bindDropzone();
   bindCrop();
   bindParams();
+  bindGamesense();
   onLangChange(applyLangUI);
   applyLangUI();          // 首次渲染（chips/下拉/播放按钮文案按当前语言）
 }

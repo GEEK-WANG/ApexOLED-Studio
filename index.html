@@ -73,6 +73,23 @@
       <button class="primary" id="btn-export" disabled data-zh="导出成品" data-en="Export">导出成品</button>
     </section>
 
+    <section id="gs-section">
+      <h3 data-zh="④ 直接发送到键盘（实验）" data-en="④ Send to keyboard (beta)">④ 直接发送到键盘（实验）</h3>
+      <div class="field">
+        <label data-zh="Engine 地址" data-en="Engine address">Engine 地址</label>
+        <div class="gs-row">
+          <input type="text" id="gs-address" spellcheck="false" placeholder="127.0.0.1:54321">
+          <button class="ghost" id="gs-pick" data-zh="读取" data-en="Read" data-zh-title="从 coreProps.json 自动读取端口（Chrome/Edge）" data-en-title="Auto-read the port from coreProps.json (Chrome/Edge)">读取</button>
+        </div>
+      </div>
+      <div class="gs-btns">
+        <button class="ghost" id="gs-connect" data-zh="测试连接" data-en="Test connection">测试连接</button>
+        <button class="primary" id="gs-send" disabled></button>
+      </div>
+      <div id="gs-status"></div>
+      <div class="gs-help" data-zh="需 SteelSeries GG 正在运行；端口见 C:\ProgramData\SteelSeries\SteelSeries Engine 3\coreProps.json 的 address 字段" data-en="Requires SteelSeries GG running; the port is the address field in C:\ProgramData\SteelSeries\SteelSeries Engine 3\coreProps.json">需 SteelSeries GG 正在运行；端口见 C:\ProgramData\SteelSeries\SteelSeries Engine 3\coreProps.json 的 address 字段</div>
+    </section>
+
     <details id="advanced">
       <summary data-zh="高级参数" data-en="Advanced">高级参数</summary>
 

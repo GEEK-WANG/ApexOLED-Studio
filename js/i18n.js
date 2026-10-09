@@ -48,6 +48,14 @@ const STRINGS = {
   decoding:      { zh: '解码中…',            en: 'Decoding…' },
   fmtGifStatic:  { zh: 'GIF（需动态内容）',   en: 'GIF (animated only)' },
   fmtGifAnim:    { zh: 'GIF（动态）',         en: 'GIF (animated)' },
+  // GameSense 直连
+  gsSend:       { zh: '推送当前帧到键盘',                        en: 'Push current frame' },
+  gsSending:    { zh: '推送中…',                                en: 'Pushing…' },
+  gsIdle:       { zh: '未连接',                                  en: 'Not connected' },
+  gsOk:         { zh: '已连接 — GG 应用列表中可见 ApexOLED Studio', en: 'Connected — ApexOLED Studio appears in GG' },
+  gsUnverified: { zh: '已发送（浏览器读不到响应），请在键盘上确认',  en: 'Sent (opaque response) — verify on the keyboard' },
+  gsSent:       { zh: '已上屏（15 秒无事件会被 GG 清除，保持页面打开）', en: 'On the OLED (GG clears it after 15 s idle — keep this page open)' },
+  gsPickOk:     { zh: '已从 coreProps.json 读取端口',             en: 'Port read from coreProps.json' },
 };
 
 export function t(key) {
