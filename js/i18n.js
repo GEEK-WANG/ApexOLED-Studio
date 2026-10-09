@@ -50,11 +50,16 @@ const STRINGS = {
   fmtGifAnim:    { zh: 'GIF（动态）',         en: 'GIF (animated)' },
   // GameSense 直连
   gsSend:       { zh: '推送当前帧到键盘',                        en: 'Push current frame' },
+  gsSendAnim:   { zh: '推送动画到键盘',                          en: 'Push animation to keyboard' },
+  gsFramesUnit: { zh: '帧',                                      en: 'frames' },
   gsSending:    { zh: '推送中…',                                en: 'Pushing…' },
   gsIdle:       { zh: '未连接',                                  en: 'Not connected' },
   gsOk:         { zh: '已连接 — GG 应用列表中可见 ApexOLED Studio', en: 'Connected — ApexOLED Studio appears in GG' },
   gsUnverified: { zh: '已发送（浏览器读不到响应），请在键盘上确认',  en: 'Sent (opaque response) — verify on the keyboard' },
-  gsSent:       { zh: '已上屏（15 秒无事件会被 GG 清除，保持页面打开）', en: 'On the OLED (GG clears it after 15 s idle — keep this page open)' },
+  gsSent:       { zh: '静图已上屏（保持页面打开以维持显示）',        en: 'Static image on OLED (keep this page open to maintain)' },
+  gsSentAnim:   { zh: '动画已上屏，循环播放中（保持页面打开；隐藏标签页可能被浏览器节流）', en: 'Animation looping on OLED (keep this page visible; hidden tabs may be throttled)' },
+  gsStopped:    { zh: '已停止，键盘已交还 GG',                    en: 'Stopped — OLED returned to GG' },
+  gsTruncated:  { zh: '帧数超过上限，仅推送了前',                  en: 'Too many frames — pushed only the first' },
   gsPickOk:     { zh: '已从 coreProps.json 读取端口',             en: 'Port read from coreProps.json' },
 };
 

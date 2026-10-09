@@ -269,6 +269,7 @@ button.ghost:hover { border-color: var(--accent); color: var(--accent); }
 .gs-row button { flex: 0 0 auto; }
 .gs-btns { display: grid; grid-template-columns: 1fr 1.7fr; gap: 8px; margin-bottom: 8px; }
 .gs-btns .ghost { height: 36px; }
+#gs-stop { width: 100%; margin-bottom: 8px; }
 #gs-status { font-size: 12px; color: var(--muted); margin-bottom: 4px; line-height: 1.45; }
 #gs-status.ok { color: var(--ok); }
 #gs-status.err { color: var(--danger); }

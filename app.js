@@ -5,7 +5,7 @@ import { render, makeRenderOptions, validateOptions } from './js/engine/pipeline
 import { effectMeta, parseEffectSpec } from './js/engine/effects.js';
 import { defaultFormat, exportResult, downloadBlob, formatBytes, FORMATS } from './js/engine/export.js';
 import { t, getLang, onLangChange, initLang } from './js/i18n.js';
-import { getSavedAddress, saveAddress, readAddressFromCoreProps, registerApp, pushFrame } from './js/gamesense.js';
+import { getSavedAddress, saveAddress, readAddressFromCoreProps, registerApp, pushAnimation, heartbeat, stopGame, MAX_PUSH_FRAMES } from './js/gamesense.js';
 
 const $ = id => document.getElementById(id);
 
@@ -20,7 +20,7 @@ const state = {
   frameIdx: 0,
   renderToken: 0,     // 异步竞态保护
   lastStats: null,
-  gs: { status: 'gsIdle', msg: null, ok: false, sending: false }, // GameSense 直连状态
+  gs: { status: 'gsIdle', msg: null, ok: false, sending: false, live: false }, // GameSense 直连状态（live = 已上屏且未停止）
 };
 
 /* ---------------- 通用 UI ---------------- */
@@ -522,18 +522,35 @@ $('btn-export').onclick = async () => {
   }
 };
 
-/* ---------------- GameSense 直连（G1 连接层 / G2 单帧上屏） ---------------- */
+/* ---------------- GameSense 直连（G1 连接 / G2 单帧 / G3 动画+保活+停止） ---------------- */
 
 function updateGsUI() {
   const g = state.gs;
+  const r = state.result;
+  const n = r ? Math.min(r.frames.length, MAX_PUSH_FRAMES) : 0;
+  const animated = !!(r && r.animated && r.frames.length > 1);
   const el = $('gs-status');
   el.textContent = g.msg || t(g.status);
   el.className = g.ok ? 'ok' : (g.msg ? 'err' : '');
-  $('gs-send').textContent = g.sending ? t('gsSending') : t('gsSend');
-  $('gs-send').disabled = !state.result || g.sending;
+  $('gs-send').textContent = g.sending
+    ? t('gsSending')
+    : (animated ? `${t('gsSendAnim')} · ${n} ${t('gsFramesUnit')}` : t('gsSend'));
+  $('gs-send').disabled = !r || g.sending;
+  $('gs-stop').disabled = !g.live || g.sending;
 }
 
 function gsSet(fields) { Object.assign(state.gs, fields); updateGsUI(); }
+
+// G3 保活：推送成功后每 20 秒发一次 game_heartbeat，重置 Engine 的休眠清屏计时（deinit 已延到 60s）。
+const HEARTBEAT_MS = 20000;
+let gsHeartbeatTimer = null;
+function startHeartbeat(addr) {
+  stopHeartbeat();
+  gsHeartbeatTimer = setInterval(() => { heartbeat(addr).catch(() => {}); }, HEARTBEAT_MS);
+}
+function stopHeartbeat() {
+  if (gsHeartbeatTimer) { clearInterval(gsHeartbeatTimer); gsHeartbeatTimer = null; }
+}
 
 async function gsRegister(manual) {
   const addr = $('gs-address').value.trim();
@@ -566,16 +583,19 @@ function bindGamesense() {
   $('gs-connect').onclick = () => gsRegister(true);
 
   $('gs-send').onclick = async () => {
-    if (!state.result || state.gs.sending) return;
-    const frame = state.result.frames[state.frameIdx] || state.result.frames[0];
+    const r = state.result;
+    if (!r || state.gs.sending) return;
     const addr = $('gs-address').value.trim();
     gsSet({ sending: true });
     try {
       await registerApp(addr); // 幂等：确保 GG 应用列表里有本应用
-      const r = await pushFrame(addr, frame);
-      gsSet({ status: r.verified ? 'gsSent' : 'gsUnverified', msg: null, ok: true });
+      const res = await pushAnimation(addr, r.frames, r.fps);
+      startHeartbeat(addr);    // G3：循环动画仍需心跳，否则 60s 后被休眠清屏
+      const status = res.frames > 1 ? 'gsSentAnim' : (res.verified ? 'gsSent' : 'gsUnverified');
+      gsSet({ status, msg: null, ok: true, live: true });
       saveAddress(addr);
-      toast(t('gsSent'), 'ok');
+      toast(t(status), 'ok');
+      if (res.truncated) toast(`${t('gsTruncated')} ${res.frames} ${t('gsFramesUnit')}`, 'err');
     } catch (err) {
       gsSet({ status: 'gsIdle', msg: err.message || String(err), ok: false });
       toast(err.message || String(err), 'err');
@@ -583,6 +603,19 @@ function bindGamesense() {
       gsSet({ sending: false });
     }
   };
+
+  $('gs-stop').onclick = async () => {
+    const addr = $('gs-address').value.trim();
+    stopHeartbeat();
+    try {
+      await stopGame(addr);
+      gsSet({ status: 'gsStopped', msg: null, ok: true, live: false });
+    } catch (err) {
+      gsSet({ status: 'gsIdle', msg: err.message || String(err), ok: false, live: false });
+      toast(err.message || String(err), 'err');
+    }
+  };
+
   updateGsUI();
 }
 

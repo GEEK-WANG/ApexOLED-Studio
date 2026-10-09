@@ -12,6 +12,11 @@ export const GAME = 'APEXOLED_STUDIO';
 export const EVENT = 'OLED_FRAME';
 const ADDR_KEY = 'apexoled-gs-address';
 
+// 上屏帧数上限：单帧 640 字节，动画 JSON 体积随帧数线性增长，超限则截断并提示（G3）。
+export const MAX_PUSH_FRAMES = 60;
+// 把 Engine 默认 15 秒的 deinit 清屏计时延到上限 60 秒，配合心跳保活（G3）。
+const DEINIT_MS = 60000;
+
 const COREPROPS_PATH = 'C:\\ProgramData\\SteelSeries\\SteelSeries Engine 3\\coreProps.json';
 
 /* ---------------- 地址配置 ---------------- */
@@ -115,6 +120,7 @@ export async function registerApp(addr) {
     game: GAME,
     game_display_name: 'ApexOLED Studio',
     developer: 'GEEK-WANG',
+    deinitialize_timer_length_ms: DEINIT_MS, // 延长休眠清屏计时（15s → 60s）
   });
 }
 
@@ -137,11 +143,29 @@ export function frameToGamesenseBytes(frame) {
   return out;
 }
 
-// 单帧上屏：bind（本帧作为该事件的默认画面）→ game_event 触发显示。
-// 每次推送重新 bind 即可刷新画面，兼容旧版 Engine（不依赖 3.17.9+ 的事件内动态图）。
-// 注意：Engine 15 秒收不到事件会休眠清屏，静态帧也会被清（G3 将用心跳解决，G2 先接受此行为）。
-export async function pushFrame(addr, frame) {
-  const bytes = frameToGamesenseBytes(frame);
+// 帧序列 → screen handler 的 datas（G3 动画）：
+//   单帧：不带 length/repeats —— 画面常驻，直到下次写屏。
+//   多帧：每帧 length-millis 控制显示时长；末帧 repeats:true = 无限循环，直到有新事件写屏。
+// 帧数超过 MAX_PUSH_FRAMES 时截断（动画 JSON 体积随帧数线性增长），并回报 truncated。
+export function framesToGamesenseDatas(frames, fps) {
+  const kept = frames.slice(0, MAX_PUSH_FRAMES);
+  const truncated = frames.length > kept.length;
+  if (kept.length === 1) {
+    return { datas: [{ 'has-text': false, 'image-data': frameToGamesenseBytes(kept[0]) }], truncated: false };
+  }
+  const frameMs = Math.max(20, Math.round(1000 / (fps > 0 ? fps : 10)));
+  const datas = kept.map((f, i) => {
+    const d = { 'has-text': false, 'image-data': frameToGamesenseBytes(f), 'length-millis': frameMs };
+    if (i === kept.length - 1) d.repeats = true;
+    return d;
+  });
+  return { datas, truncated };
+}
+
+// 上屏：bind（把整批帧绑为该事件的画面）→ game_event 触发。
+// 每次推送都重新 bind，画面随之刷新；循环动画会一直播到 stop_game 或下次推送。
+export async function pushAnimation(addr, frames, fps) {
+  const { datas, truncated } = framesToGamesenseDatas(frames, fps);
   const r = await post(addr, 'bind_game_event', {
     game: GAME,
     event: EVENT,
@@ -153,9 +177,19 @@ export async function pushFrame(addr, frame) {
       'device-type': `screened-${WIDTH}x${HEIGHT}`,
       zone: 'one',
       mode: 'screen',
-      datas: [{ 'has-text': false, 'image-data': bytes }],
+      datas,
     }],
   });
   await post(addr, 'game_event', { game: GAME, event: EVENT, data: { value: 0 } });
-  return r; // { verified: boolean }
+  return { ...r, frames: datas.length, truncated };
+}
+
+// 心跳：重置 deinit 计时，让静态画面与循环动画不被休眠规则清掉（G3 保活）。
+export async function heartbeat(addr) {
+  return post(addr, 'game_heartbeat', { game: GAME });
+}
+
+// 停止上屏：交还 GG 默认显示（循环动画也只能靠它停下）。
+export async function stopGame(addr) {
+  return post(addr, 'stop_game', { game: GAME });
 }
