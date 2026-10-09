@@ -26,17 +26,30 @@ export function saveAddress(addr) {
 
 // File System Access API（Chrome/Edge，https 或 localhost 下可用）：
 // 用户在文件选择器里选中 coreProps.json，自动解析出 {"address":"127.0.0.1:xxxxx"}。
+// 浏览器（Chrome/Edge）对 C:\ProgramData 等系统目录有读取限制，showOpenFilePicker / getFile
+// 可能抛出浏览器级 SecurityError / NotReadableError（非本模块自定义文案）。统一转成手动降级指引。
+const MANUAL_HINT = `请改用记事本打开 ${COREPROPS_PATH}，把 "address" 的值复制粘贴到输入框（形如 127.0.0.1:3612）。 / Open it in Notepad and paste the "address" value into the input (e.g. 127.0.0.1:3612).`;
+
 export async function readAddressFromCoreProps() {
   if (typeof window.showOpenFilePicker !== 'function') {
     throw new Error('此浏览器不支持文件选择器，请手动填写地址（Chrome/Edge 支持）。 / File picker unsupported here; enter the address manually (Chrome/Edge OK).');
   }
-  const [handle] = await window.showOpenFilePicker({
-    types: [{ description: 'coreProps.json', accept: { 'application/json': ['.json'] } }],
-    multiple: false,
-  });
-  const file = await handle.getFile();
+  let handle, file;
+  try {
+    [handle] = await window.showOpenFilePicker({
+      types: [{ description: 'coreProps.json', accept: { 'application/json': ['.json'] } }],
+      multiple: false,
+    });
+    file = await handle.getFile();
+  } catch (err) {
+    if (err && err.name === 'AbortError') throw err; // 用户主动取消：交调用方静默处理
+    throw new Error(`浏览器不允许读取该位置（系统目录受限）。 / The browser blocks reading that location. ${MANUAL_HINT}`);
+  }
+  let text;
+  try { text = await file.text(); }
+  catch { throw new Error(`无法读取该文件。 / Cannot read that file. ${MANUAL_HINT}`); }
   let props;
-  try { props = JSON.parse(await file.text()); }
+  try { props = JSON.parse(text); }
   catch { throw new Error('所选文件不是有效 JSON，请确认选的是 coreProps.json。 / Selected file is not valid JSON; make sure it is coreProps.json.'); }
   const addr = props && typeof props.address === 'string' ? props.address.trim() : '';
   if (!addr) {
@@ -47,40 +60,51 @@ export async function readAddressFromCoreProps() {
 
 /* ---------------- HTTP ---------------- */
 
+// 地址归一化：全角冒号/句点/空格 → 半角（用户常见误输入），去尾部斜杠，补协议，校验 host:port。
 function baseUrl(addr) {
-  const a = (addr || '').trim().replace(/\/+$/, '');
+  let a = String(addr || '').trim()
+    .replace(/：/g, ':')
+    .replace(/[。．]/g, '.')
+    .replace(/[\u3000\s]/g, '');
+  a = a.replace(/\/+$/, '');
   if (!a) throw new Error('请先填写 Engine 地址（如 127.0.0.1:54321）。 / Enter the Engine address first (e.g. 127.0.0.1:54321).');
-  return a.startsWith('http') ? a : `http://${a}`;
+  if (!/^https?:\/\//i.test(a)) a = `http://${a}`;
+  if (!/^https?:\/\/[^\s/:]+:\d{1,5}$/i.test(a)) {
+    throw new Error('地址格式不对，应为「主机:端口」（如 127.0.0.1:3612）。 / Bad address format; expected host:port (e.g. 127.0.0.1:3612).');
+  }
+  return a;
 }
 
-// Engine 实测行为（2026-10 本机探针）：
-//   OPTIONS 预检 → 200 + Access-Control-Allow-Origin: *（预检可读，证明服务在且放行跨域）
-//   POST application/json → 200（服务端正常处理），但 POST 响应不带 CORS 头（浏览器读不到回执）
-//   POST text/plain / 无 Content-Type → 400 严格拒收
-// 策略：预检探路区分「GG 未运行」与「可达但回执不可读」；只发 application/json。
-//   预检失败 → 报无法连接；预检通过但 POST 本地被拒（读不到响应）→ 视为已送达未验证。
+// Engine 实测行为（2026-10 本机转储，随 coreProps 端口）：
+//   OPTIONS /game_event → 200 + Access-Control-Allow-Origin: * + Allow-Methods: POST,OPTIONS
+//   POST application/json → 200，响应同样带 ACAO:*（服务端确实放行跨域，浏览器可读回执）
+//   POST text/plain / 无 Content-Type → 400 严格拒收（故绝不能降级成 text/plain 盲发）
+// 坑：Access-Control-Allow-Origin 是非 CORS 安全列表响应头，服务端未发 Access-Control-Expose-Headers
+//     时页面 JS 读不到（headers.get(...) 恒为 null）。曾据此误报「端口可达但不是 GameSense 服务」。
 async function post(addr, path, body) {
   const url = `${baseUrl(addr)}/${path}`;
-  let preflight;
   try {
-    preflight = await fetch(`${baseUrl(addr)}/game_event`, {
-      method: 'OPTIONS',
-      headers: { 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'content-type' },
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     });
-  } catch {
+    if (!res.ok) throw new Error(`Engine 返回 HTTP ${res.status}。 / Engine replied HTTP ${res.status}.`);
+    return { verified: true };
+  } catch (err) {
+    if (/Engine 返回 HTTP/.test((err && err.message) || '')) throw err; // 可读的 HTTP 错误：如实上报
+    // 请求被拦截（连接失败，或响应跨域不可读）：no-cors 探路区分「GG 未运行」与「已送达未验证」
+    if (await reachable(addr)) return { verified: false };
     throw new Error('无法连接 Engine：地址不对或 SteelSeries GG 未运行。 / Cannot reach Engine: wrong address or GG not running.');
   }
-  if (!preflight.ok || preflight.headers.get('access-control-allow-origin') == null) {
-    throw new Error('端口可达，但不是 GameSense 服务（或未允许跨域）。 / Port reachable but not a GameSense server (or CORS denied).');
-  }
+}
+
+// no-cors GET 探路：端口没人监听会 reject，服务在则 resolve（opaque，读不到内容但能证明可达）
+async function reachable(addr) {
   try {
-    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    if (!res.ok) throw new Error(`Engine 返回 HTTP ${res.status}。 / Engine replied HTTP ${res.status}.`);
-    return { verified: true }; // 若未来 Engine 的 POST 响应也带 CORS 头，可读到真实回执
-  } catch (err) {
-    if (err && /HTTP \d+/.test(err.message)) throw err; // 可读的 HTTP 错误：如实上报
-    return { verified: false }; // 预检已证明服务在 → 请求已送达，仅回执不可读
-  }
+    await fetch(`${baseUrl(addr)}/`, { method: 'GET', mode: 'no-cors' });
+    return true;
+  } catch { return false; }
 }
 
 /* ---------------- GameSense 协议 ---------------- */
